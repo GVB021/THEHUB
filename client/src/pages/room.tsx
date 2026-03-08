@@ -55,23 +55,39 @@ import {
 import { encodeWav, wavToBlob, getDurationSeconds } from "@/lib/audio/wavEncoder";
 import { analyzeTakeQuality, type QualityMetrics } from "@/lib/audio/qualityAnalysis";
 
-function JitsiMeetPanel({ roomId, displayName }: { roomId: string; displayName: string }) {
+function DailyMeetPanel({ sessionId }: { sessionId: string }) {
   const [isOpen, setIsOpen] = useState(true);
   const [isCompact, setIsCompact] = useState(false);
+  const [dailyUrl, setDailyUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const jitsiRoom = `vhub-session-${roomId}`.replace(/[^a-zA-Z0-9-]/g, "-");
-  const jitsiUrl = [
-    `https://meet.jit.si/${jitsiRoom}`,
-    `#config.startWithVideoMuted=true`,
-    `&config.disableDeepLinking=true`,
-    `&config.toolbarButtons=["microphone","hangup","tileview","fullscreen","chat"]`,
-    `&userInfo.displayName=${encodeURIComponent(displayName)}`,
-  ].join("");
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const res = await authFetch("/api/create-room", {
+          method: "POST",
+          body: JSON.stringify({ sessionId }),
+        });
+        if (!cancelled && res?.url) {
+          setDailyUrl(res.url);
+        }
+      } catch (err: any) {
+        if (!cancelled) setError(err?.message || "Erro ao criar sala");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [sessionId]);
 
   const panelHeight = isOpen ? (isCompact ? "200px" : "400px") : "0px";
 
   return (
-    <div className="mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }} data-testid="panel-jitsi">
+    <div className="mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }} data-testid="panel-daily">
       <div className="flex items-center justify-between px-3 py-2" style={{ borderBottom: isOpen ? "1px solid rgba(255,255,255,0.06)" : "none", background: "rgba(255,255,255,0.03)" }}>
         <span className="text-[11px] font-medium flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.60)" }}>
           <Mic className="w-3 h-3" style={{ color: "hsl(160 84% 60%)" }} /> Chat de Voz
@@ -82,7 +98,7 @@ function JitsiMeetPanel({ roomId, displayName }: { roomId: string; displayName: 
               onClick={() => setIsCompact(true)}
               className="text-[11px] transition-colors flex items-center gap-1"
               style={{ color: "rgba(255,255,255,0.40)" }}
-              data-testid="button-compact-jitsi"
+              data-testid="button-compact-daily"
             >
               <Minimize2 className="w-3 h-3" /> Reduzir
             </button>
@@ -92,7 +108,7 @@ function JitsiMeetPanel({ roomId, displayName }: { roomId: string; displayName: 
               onClick={() => setIsCompact(false)}
               className="text-[11px] transition-colors flex items-center gap-1"
               style={{ color: "rgba(255,255,255,0.40)" }}
-              data-testid="button-expand-jitsi"
+              data-testid="button-expand-daily"
             >
               <Maximize2 className="w-3 h-3" /> Expandir
             </button>
@@ -100,7 +116,7 @@ function JitsiMeetPanel({ roomId, displayName }: { roomId: string; displayName: 
           <button
             onClick={() => setIsOpen(v => !v)}
             className="text-[11px] transition-colors flex items-center gap-1" style={{ color: "rgba(255,255,255,0.40)" }}
-            data-testid="button-toggle-jitsi"
+            data-testid="button-toggle-daily"
           >
             {isOpen ? <><X className="w-3 h-3" /> Minimizar</> : <><Mic className="w-3 h-3" /> Abrir</>}
           </button>
@@ -111,14 +127,26 @@ function JitsiMeetPanel({ roomId, displayName }: { roomId: string; displayName: 
         overflow: "hidden",
         transition: "height 0.3s ease",
       }}>
-        <iframe
-          src={jitsiUrl}
-          allow="camera; microphone; fullscreen; display-capture; autoplay"
-          className="w-full"
-          style={{ height: isCompact ? "200px" : "400px", border: "none" }}
-          data-testid="iframe-jitsi-meet"
-          title="Jitsi Meet Voice Chat"
-        />
+        {loading && (
+          <div className="flex items-center justify-center" style={{ height: isCompact ? "200px" : "400px", color: "rgba(255,255,255,0.40)" }}>
+            <span className="text-xs">Criando sala de voz...</span>
+          </div>
+        )}
+        {error && (
+          <div className="flex items-center justify-center" style={{ height: isCompact ? "200px" : "400px", color: "rgba(255,100,100,0.70)" }}>
+            <span className="text-xs">{error}</span>
+          </div>
+        )}
+        {dailyUrl && !loading && (
+          <iframe
+            src={dailyUrl}
+            allow="camera; microphone; autoplay; display-capture; fullscreen"
+            className="w-full"
+            style={{ height: isCompact ? "200px" : "400px", border: "none", borderRadius: "0 0 12px 12px" }}
+            data-testid="iframe-daily-meet"
+            title="Daily.co Voice Chat"
+          />
+        )}
       </div>
     </div>
   );
@@ -832,7 +860,7 @@ export default function RecordingRoom() {
   }, [listeningFor]);
 
   const emitVideoEvent = useCallback((_event: string, _data: any) => {
-    // Video sync removed - using Jitsi Meet for communication
+    // Video sync removed - using Daily.co for communication
   }, []);
 
   const playVideo = useCallback(() => {
@@ -1760,10 +1788,7 @@ export default function RecordingRoom() {
             })}
           </div>
 
-          <JitsiMeetPanel
-            roomId={sessionId}
-            displayName={user?.fullName || user?.artistName || user?.displayName || user?.email || "Participante"}
-          />
+          <DailyMeetPanel sessionId={sessionId} />
         </div>
       </div>
     </div>

@@ -42,3 +42,8 @@ waitForPort = 5000
 
 [agent]
 integrations = ["javascript_log_in_with_replit:2.0.0"]
+
+[userenv]
+
+[userenv.shared]
+DAILY_API_KEY = "22985c9e9596c9bc97d9d044b1c196ac625e3b6ffacba2741caf892ec36a2c06"

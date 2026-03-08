@@ -8,7 +8,7 @@ Key features:
 - Multi-studio workspace with role-based access control
 - Production and character management with script support (JSON scripts with timecodes)
 - Recording room with browser-based audio capture, waveform visualization, and take management (files saved as `[PERSONAGEM]_[DUBLADOR]_[HHMMSS].WAV`)
-- Jitsi Meet voice chat integration (meet.jit.si public server, default settings, first joiner is moderator)
+- Daily.co voice/video chat integration (auto-creates unique room per session via API, 4h expiry, prejoin UI enabled)
 - Session scheduling and participant tracking
 - Platform-wide god-level admin panel for platform_owner (real-time polling every 5s)
 - Studio-level admin panel for studio_admin (approve/reject registrations, manage members)
@@ -117,10 +117,12 @@ Preferred communication style: Simple, everyday language.
 |---|---|
 | `DATABASE_URL` | PostgreSQL connection string |
 | `SESSION_SECRET` | Express session signing secret |
+| `DAILY_API_KEY` | Daily.co API key for video room creation |
 
 ### Third-Party Services
 
 - **PostgreSQL**: Primary data store. Managed via Drizzle ORM with `node-postgres` (pg) driver.
+- **Daily.co**: Video/voice chat rooms. Backend creates rooms via `POST https://api.daily.co/v1/rooms` with `DAILY_API_KEY`. Each session gets a unique room with 4h expiry and prejoin UI.
 - **Google Fonts**: Inter and JetBrains Mono loaded via CDN
 
 ### Key NPM Dependencies

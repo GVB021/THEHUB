@@ -779,5 +779,60 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.post("/api/create-room", requireAuth, async (req, res) => {
+    try {
+      const { sessionId } = req.body;
+      if (!sessionId) {
+        return res.status(400).json({ message: "sessionId obrigatorio" });
+      }
+
+      const sessionCheck = await verifySessionAccess(req, res, sessionId);
+      if (!sessionCheck) return;
+
+      const roomName = `vhub-${sessionId}`.replace(/[^a-zA-Z0-9-]/g, "-").slice(0, 41);
+      const dailyApiKey = process.env.DAILY_API_KEY;
+      if (!dailyApiKey) {
+        return res.status(500).json({ message: "DAILY_API_KEY nao configurada" });
+      }
+
+      const existingRes = await fetch(`https://api.daily.co/v1/rooms/${roomName}`, {
+        headers: { Authorization: `Bearer ${dailyApiKey}` },
+      });
+
+      if (existingRes.ok) {
+        const existing = await existingRes.json() as { url: string };
+        return res.json({ url: existing.url });
+      }
+
+      const createRes = await fetch("https://api.daily.co/v1/rooms", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${dailyApiKey}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: roomName,
+          properties: {
+            enable_prejoin_ui: true,
+            exp: Math.floor(Date.now() / 1000) + 3600 * 4,
+          },
+        }),
+      });
+
+      if (!createRes.ok) {
+        const err = await createRes.text();
+        logger.error("[Daily] Room creation failed", { status: createRes.status, body: err });
+        return res.status(500).json({ message: "Falha ao criar sala Daily" });
+      }
+
+      const room = await createRes.json() as { url: string };
+      logger.info("[Daily] Room created", { roomName, url: room.url });
+      res.json({ url: room.url });
+    } catch (err: any) {
+      logger.error("[Daily] Error", { message: err?.message });
+      res.status(500).json({ message: "Erro ao criar sala de video" });
+    }
+  });
+
   return httpServer;
 }
