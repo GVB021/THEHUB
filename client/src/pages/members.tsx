@@ -112,7 +112,7 @@ const Members = memo(function Members({ studioId }: { studioId: string }) {
                 <div key={m.id} className="vhub-card p-4" data-testid={`pending-member-${m.id}`}>
                   <div className="flex flex-col gap-3">
                     <div className="flex items-center gap-4">
-                      <div className="w-10 h-10 rounded-full bg-amber-100 ring-1 ring-amber-200 flex items-center justify-center text-amber-700 font-bold text-sm shrink-0">
+                      <div className="w-10 h-10 rounded-full bg-amber-500/15 ring-1 ring-amber-500/25 flex items-center justify-center text-amber-400 font-bold text-sm shrink-0">
                         {(m.user?.fullName || m.user?.email || "?").charAt(0).toUpperCase()}
                       </div>
                       <div className="flex-1 min-w-0">

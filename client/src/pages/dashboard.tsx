@@ -63,26 +63,26 @@ const Dashboard = memo(function Dashboard({ studioId }: { studioId: string }) {
         <StatCard
           label={pt.dashboard.productions}
           value={productions?.length ?? 0}
-          icon={<Film className="h-4 w-4 text-blue-600" />}
+          icon={<Film className="h-4 w-4 text-blue-400" />}
           description="Total no estudio"
         />
         <StatCard
           label={pt.dashboard.upcoming}
           value={upcomingSessions.length}
-          icon={<Calendar className="h-4 w-4 text-violet-600" />}
+          icon={<Calendar className="h-4 w-4 text-violet-400" />}
           description="Sessoes agendadas"
         />
         <StatCard
           label={pt.dashboard.team}
           value={staff?.length ?? 0}
-          icon={<Users className="h-4 w-4 text-emerald-600" />}
+          icon={<Users className="h-4 w-4 text-emerald-400" />}
           description="Membros ativos"
         />
         <StatCard
           label={pt.dashboard.status}
           value={pt.status.active}
-          icon={<Activity className="h-4 w-4 text-emerald-600" />}
-          valueClassName="text-emerald-600"
+          icon={<Activity className="h-4 w-4 text-emerald-400" />}
+          valueClassName="text-emerald-400"
           description="Sistemas operacionais"
         />
       </div>

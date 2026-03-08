@@ -9,11 +9,9 @@ import {
   Eye, EyeOff, Activity, Database, BadgeCheck, XCircle,
   UserCog, ToggleLeft, ToggleRight, Star
 } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { authFetch } from "@/lib/auth-fetch";
 import { useToast } from "@/hooks/use-toast";
@@ -27,11 +25,12 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 
 type Section =
-  | "overview" | "users" | "studios" | "productions"
+  | "overview" | "pending" | "users" | "studios" | "productions"
   | "sessions" | "takes" | "logs" | "integrations";
 
 const NAV: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "overview", label: "Visao Geral", icon: LayoutDashboard },
+  { id: "pending", label: "Pendentes", icon: AlertCircle },
   { id: "users", label: "Usuarios", icon: Users },
   { id: "studios", label: "Estudios", icon: Building2 },
   { id: "productions", label: "Producoes", icon: Film },
@@ -41,7 +40,15 @@ const NAV: { id: Section; label: string; icon: React.ElementType }[] = [
   { id: "integrations", label: "API e Integracoes", icon: KeyRound },
 ];
 
-const ROLES = ["platform_owner", "user"];
+const ROLES = ["platform_owner", "user", "aluno"];
+
+const ALL_STUDIO_ROLES = [
+  { value: "studio_admin", label: "Admin Estudio" },
+  { value: "diretor", label: "Diretor" },
+  { value: "engenheiro_audio", label: "Engenheiro de Audio" },
+  { value: "dublador", label: "Dublador" },
+  { value: "aluno", label: "Aluno" },
+];
 
 function roleBadgeVariant(role: string): "destructive" | "default" | "secondary" | "outline" {
   if (role === "platform_owner") return "destructive";
@@ -74,15 +81,15 @@ function ConfirmDialog({ open, onClose, onConfirm, title, description, confirmLa
 
 function StatCard({ label, value, icon: Icon, color }: { label: string; value: number | string; icon: React.ElementType; color: string }) {
   return (
-    <Card className={`border-t-4 ${color}`}>
-      <CardHeader className="flex flex-row items-center justify-between pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">{label}</CardTitle>
-        <Icon className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold">{value}</div>
-      </CardContent>
-    </Card>
+    <div className="vhub-card p-5">
+      <div className="flex items-start justify-between mb-3">
+        <span className="vhub-label">{label}</span>
+        <div className={`shrink-0 w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center`}>
+          <Icon className={`h-4 w-4 ${color}`} />
+        </div>
+      </div>
+      <div className="text-3xl font-bold text-foreground">{value}</div>
+    </div>
   );
 }
 
@@ -90,35 +97,40 @@ function OverviewSection() {
   const { data: stats, isLoading } = useQuery({
     queryKey: ["/api/admin/stats"],
     queryFn: () => authFetch("/api/admin/stats") as Promise<Record<string, number>>,
+    refetchInterval: 5000,
   });
   const { data: logs } = useQuery({
     queryKey: ["/api/admin/audit"],
     queryFn: () => authFetch("/api/admin/audit") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold mb-4">Visao Geral do Sistema</h2>
-        <div className="grid gap-4 grid-cols-2 md:grid-cols-5">
-          <StatCard label="Usuarios" value={isLoading ? "—" : stats?.users ?? 0} icon={Users} color="border-t-blue-500" />
-          <StatCard label="Estudios" value={isLoading ? "—" : stats?.studios ?? 0} icon={Building2} color="border-t-purple-500" />
-          <StatCard label="Producoes" value={isLoading ? "—" : stats?.productions ?? 0} icon={Film} color="border-t-green-500" />
-          <StatCard label="Sessoes" value={isLoading ? "—" : stats?.sessions ?? 0} icon={Calendar} color="border-t-amber-500" />
-          <StatCard label="Takes" value={isLoading ? "—" : stats?.takes ?? 0} icon={Mic2} color="border-t-rose-500" />
+        <div className="grid gap-4 grid-cols-2 md:grid-cols-3 lg:grid-cols-6">
+          <StatCard label="Usuarios" value={isLoading ? "—" : stats?.users ?? 0} icon={Users} color="text-blue-400" />
+          <StatCard label="Pendentes" value={isLoading ? "—" : stats?.pendingUsers ?? 0} icon={AlertCircle} color="text-amber-400" />
+          <StatCard label="Estudios" value={isLoading ? "—" : stats?.studios ?? 0} icon={Building2} color="text-violet-400" />
+          <StatCard label="Producoes" value={isLoading ? "—" : stats?.productions ?? 0} icon={Film} color="text-emerald-400" />
+          <StatCard label="Sessoes" value={isLoading ? "—" : stats?.sessions ?? 0} icon={Calendar} color="text-cyan-400" />
+          <StatCard label="Takes" value={isLoading ? "—" : stats?.takes ?? 0} icon={Mic2} color="text-rose-400" />
         </div>
       </div>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><Activity className="h-4 w-4" /> Atividade Recente</CardTitle>
-        </CardHeader>
-        <CardContent>
+      <div className="vhub-card overflow-hidden">
+        <div className="vhub-card-header">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
+            <Activity className="h-4 w-4" /> Atividade Recente
+          </div>
+        </div>
+        <div className="vhub-card-body">
           {!logs?.length ? (
             <p className="text-sm text-muted-foreground">Nenhum registro de auditoria.</p>
           ) : (
             <div className="space-y-2">
               {logs.slice(0, 10).map((log: any) => (
-                <div key={log.id} className="flex items-center gap-3 text-sm py-2 border-b last:border-0">
+                <div key={log.id} className="flex items-center gap-3 text-sm py-2 border-b border-white/6 last:border-0">
                   <BadgeCheck className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                   <span className="font-mono text-xs text-muted-foreground w-36 shrink-0">
                     {new Date(log.createdAt).toLocaleString()}
@@ -129,8 +141,187 @@ function OverviewSection() {
               ))}
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PendingUsersSection() {
+  const qc = useQueryClient();
+  const { toast } = useToast();
+
+  const { data: pendingUsers = [], isLoading } = useQuery({
+    queryKey: ["/api/admin/pending-users"],
+    queryFn: () => authFetch("/api/admin/pending-users") as Promise<any[]>,
+    refetchInterval: 5000,
+  });
+
+  const { data: studiosList = [] } = useQuery({
+    queryKey: ["/api/studios"],
+    queryFn: () => authFetch("/api/studios") as Promise<any[]>,
+    refetchInterval: 5000,
+  });
+
+  const [approveUser, setApproveUser] = useState<any | null>(null);
+  const [approveStudioId, setApproveStudioId] = useState("");
+  const [approveRoles, setApproveRoles] = useState<string[]>([]);
+
+  const approveMut = useMutation({
+    mutationFn: ({ userId, studioId, studioRoles }: { userId: string; studioId: string; studioRoles: string[] }) =>
+      authFetch(`/api/admin/users/${userId}/approve`, { method: "POST", body: JSON.stringify({ studioId, studioRoles }) }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      setApproveUser(null);
+      setApproveStudioId("");
+      setApproveRoles([]);
+      toast({ title: "Usuario aprovado" });
+    },
+    onError: (e: any) => toast({ title: e.message || "Falha ao aprovar", variant: "destructive" }),
+  });
+
+  const rejectMut = useMutation({
+    mutationFn: (userId: string) =>
+      authFetch(`/api/admin/users/${userId}/reject`, { method: "POST" }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["/api/admin/pending-users"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/users"] });
+      qc.invalidateQueries({ queryKey: ["/api/admin/stats"] });
+      toast({ title: "Usuario rejeitado" });
+    },
+    onError: (e: any) => toast({ title: e.message || "Falha ao rejeitar", variant: "destructive" }),
+  });
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <h2 className="text-xl font-semibold flex items-center gap-2">
+          <AlertCircle className="h-5 w-5 text-amber-400" />
+          Usuarios Pendentes
+          {pendingUsers.length > 0 && (
+            <Badge variant="destructive" data-testid="badge-pending-count">{pendingUsers.length}</Badge>
+          )}
+        </h2>
+      </div>
+      {isLoading ? (
+        <div className="p-6 text-sm text-muted-foreground">Carregando...</div>
+      ) : pendingUsers.length === 0 ? (
+        <div className="vhub-card p-6 text-center text-muted-foreground">
+            <CheckCircle2 className="h-8 w-8 mx-auto mb-2 text-emerald-400" />
+            Nenhum usuario pendente de aprovacao.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {pendingUsers.map((user: any) => (
+            <div key={user.id} className="vhub-card p-4" data-testid={`card-pending-user-${user.id}`}>
+              <div>
+                <div className="flex items-start justify-between gap-4 flex-wrap">
+                  <div className="space-y-1">
+                    <div className="font-medium">{user.displayName || user.fullName || "—"}</div>
+                    <div className="text-sm text-muted-foreground">{user.email}</div>
+                    {user.specialty && <div className="text-xs text-muted-foreground">Especialidade: {user.specialty}</div>}
+                    {user.city && <div className="text-xs text-muted-foreground">Cidade: {user.city}, {user.state}</div>}
+                    {user.studioMemberships?.length > 0 && (
+                      <div className="flex items-center gap-1 flex-wrap mt-1">
+                        <span className="text-xs text-muted-foreground">Estudio solicitado:</span>
+                        {user.studioMemberships.map((sm: any) => (
+                          <Badge key={sm.studioId} variant="outline" className="text-xs">
+                            {sm.studioName}
+                          </Badge>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        setApproveUser(user);
+                        const firstStudio = user.studioMemberships?.[0]?.studioId || "";
+                        setApproveStudioId(firstStudio);
+                        setApproveRoles([]);
+                      }}
+                      data-testid={`button-approve-pending-${user.id}`}
+                    >
+                      <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Aprovar
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => rejectMut.mutate(user.id)}
+                      disabled={rejectMut.isPending}
+                      data-testid={`button-reject-pending-${user.id}`}
+                    >
+                      <XCircle className="h-3.5 w-3.5 mr-1" /> Rejeitar
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={!!approveUser} onOpenChange={v => { if (!v) setApproveUser(null); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Aprovar Usuario</DialogTitle>
+            <DialogDescription>
+              Aprovar {approveUser?.displayName || approveUser?.fullName || approveUser?.email} e atribuir a um estudio com papeis.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-1.5">
+              <Label>Estudio</Label>
+              <Select value={approveStudioId} onValueChange={setApproveStudioId}>
+                <SelectTrigger data-testid="select-approve-studio"><SelectValue placeholder="Selecione um estudio" /></SelectTrigger>
+                <SelectContent>
+                  {studiosList.map((s: any) => (
+                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Papeis no Estudio</Label>
+              <div className="space-y-2 pt-1">
+                {ALL_STUDIO_ROLES.map(r => (
+                  <label key={r.value} className="flex items-center gap-2 cursor-pointer">
+                    <Checkbox
+                      checked={approveRoles.includes(r.value)}
+                      onCheckedChange={() => {
+                        setApproveRoles(prev =>
+                          prev.includes(r.value)
+                            ? prev.filter(x => x !== r.value)
+                            : [...prev, r.value]
+                        );
+                      }}
+                      data-testid={`check-approve-role-${r.value}`}
+                    />
+                    <span className="text-sm">{r.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setApproveUser(null)}>Cancelar</Button>
+            <Button
+              onClick={() => approveUser && approveStudioId && approveMut.mutate({
+                userId: approveUser.id,
+                studioId: approveStudioId,
+                studioRoles: approveRoles.length > 0 ? approveRoles : ["dublador"],
+              })}
+              disabled={!approveStudioId || approveMut.isPending}
+              data-testid="button-confirm-approve"
+            >
+              {approveMut.isPending ? "Aprovando..." : "Aprovar e Atribuir"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
@@ -154,11 +345,27 @@ function UsersSection() {
   const { data: usersList = [], isLoading } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: () => authFetch("/api/admin/users") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   const { data: studiosList = [] } = useQuery({
     queryKey: ["/api/studios"],
     queryFn: () => authFetch("/api/studios") as Promise<any[]>,
+    refetchInterval: 5000,
+  });
+
+  const changeRoleMut = useMutation({
+    mutationFn: ({ id, role }: { id: string; role: string }) =>
+      authFetch(`/api/admin/users/${id}/change-role`, { method: "POST", body: JSON.stringify({ role }) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/users"] }); qc.invalidateQueries({ queryKey: ["/api/admin/stats"] }); toast({ title: "Papel alterado" }); },
+    onError: (e: any) => toast({ title: e.message || "Falha ao alterar papel", variant: "destructive" }),
+  });
+
+  const changeStatusMut = useMutation({
+    mutationFn: ({ id, status }: { id: string; status: string }) =>
+      authFetch(`/api/admin/users/${id}/change-status`, { method: "POST", body: JSON.stringify({ status }) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/users"] }); qc.invalidateQueries({ queryKey: ["/api/admin/stats"] }); qc.invalidateQueries({ queryKey: ["/api/admin/pending-users"] }); toast({ title: "Status alterado" }); },
+    onError: (e: any) => toast({ title: e.message || "Falha ao alterar status", variant: "destructive" }),
   });
 
   const createMut = useMutation({
@@ -209,33 +416,53 @@ function UsersSection() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar usuarios..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} data-testid="input-search-users" />
       </div>
-      <Card>
-        <CardContent className="p-0">
+      <div className="vhub-card overflow-hidden">
+        <div className="p-0">
           {isLoading ? <div className="p-6 text-sm text-muted-foreground">Carregando...</div> : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left p-3 font-medium">Usuario</th>
-                  <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium">Papel</th>
-                  <th className="text-left p-3 font-medium hidden md:table-cell">Criado em</th>
-                  <th className="text-right p-3 font-medium">Acoes</th>
+                <tr className="border-b border-white/8 bg-white/3">
+                  <th className="text-left p-3 font-medium text-foreground/70">Usuario</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Status</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Papel</th>
+                  <th className="text-left p-3 font-medium text-foreground/70 hidden md:table-cell">Criado em</th>
+                  <th className="text-right p-3 font-medium text-foreground/70">Acoes</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map(user => (
-                  <tr key={user.id} className="border-b last:border-0 hover:bg-muted/20" data-testid={`row-user-${user.id}`}>
+                  <tr key={user.id} className="border-b border-white/6 last:border-0 hover:bg-white/3" data-testid={`row-user-${user.id}`}>
                     <td className="p-3">
                       <div className="font-medium">{user.displayName || user.fullName || "—"}</div>
                       <div className="text-xs text-muted-foreground">{user.email}</div>
                     </td>
                     <td className="p-3">
-                      <Badge variant={user.status === "approved" ? "default" : user.status === "rejected" ? "destructive" : "secondary"} data-testid={`badge-status-${user.id}`}>
-                        {user.status === "approved" ? "Aprovado" : user.status === "rejected" ? "Rejeitado" : "Pendente"}
-                      </Badge>
+                      <Select
+                        value={user.status}
+                        onValueChange={v => changeStatusMut.mutate({ id: user.id, status: v })}
+                      >
+                        <SelectTrigger className="h-7 w-28 text-xs" data-testid={`select-status-${user.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="approved">Aprovado</SelectItem>
+                          <SelectItem value="pending">Pendente</SelectItem>
+                          <SelectItem value="rejected">Rejeitado</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="p-3">
-                      <Badge variant={roleBadgeVariant(user.role)}>{user.role}</Badge>
+                      <Select
+                        value={user.role}
+                        onValueChange={v => changeRoleMut.mutate({ id: user.id, role: v })}
+                      >
+                        <SelectTrigger className="h-7 w-36 text-xs" data-testid={`select-role-${user.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ROLES.map(r => <SelectItem key={r} value={r}>{r}</SelectItem>)}
+                        </SelectContent>
+                      </Select>
                     </td>
                     <td className="p-3 text-muted-foreground hidden md:table-cell text-xs">
                       {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : "—"}
@@ -266,8 +493,8 @@ function UsersSection() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Dialog open={createOpen} onOpenChange={setCreateOpen}>
         <DialogContent>
@@ -397,12 +624,7 @@ function UsersSection() {
             <div className="space-y-1.5">
               <Label>Papeis no Estudio (opcional)</Label>
               <div className="space-y-2 pt-1">
-                {[
-                  { value: "studio_admin", label: "Admin Estudio" },
-                  { value: "diretor", label: "Diretor" },
-                  { value: "engenheiro_audio", label: "Engenheiro de Audio" },
-                  { value: "dublador", label: "Dublador" },
-                ].map(r => (
+                {ALL_STUDIO_ROLES.map(r => (
                   <label key={r.value} className="flex items-center gap-2 cursor-pointer">
                     <Checkbox
                       checked={assignRoles.includes(r.value)}
@@ -451,11 +673,13 @@ function StudiosSection() {
   const { data: studiosList = [], isLoading } = useQuery({
     queryKey: ["/api/admin/studios"],
     queryFn: () => authFetch("/api/admin/studios") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   const { data: usersList = [] } = useQuery({
     queryKey: ["/api/admin/users"],
     queryFn: () => authFetch("/api/admin/users") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   const approvedUsers = usersList.filter((u: any) => u.role !== "platform_owner" && u.status === "approved");
@@ -504,21 +728,21 @@ function StudiosSection() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar estudios..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <Card>
-        <CardContent className="p-0">
+      <div className="vhub-card overflow-hidden">
+        <div className="p-0">
           {isLoading ? <div className="p-6 text-sm text-muted-foreground">Carregando...</div> : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left p-3 font-medium">Estudio</th>
-                  <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium hidden md:table-cell">Criado em</th>
-                  <th className="text-right p-3 font-medium">Acoes</th>
+                <tr className="border-b border-white/8 bg-white/3">
+                  <th className="text-left p-3 font-medium text-foreground/70">Estudio</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Status</th>
+                  <th className="text-left p-3 font-medium text-foreground/70 hidden md:table-cell">Criado em</th>
+                  <th className="text-right p-3 font-medium text-foreground/70">Acoes</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((studio: any) => (
-                  <tr key={studio.id} className="border-b last:border-0 hover:bg-muted/20" data-testid={`row-studio-${studio.id}`}>
+                  <tr key={studio.id} className="border-b border-white/6 last:border-0 hover:bg-white/3" data-testid={`row-studio-${studio.id}`}>
                     <td className="p-3">
                       <div className="font-medium">{studio.name}</div>
                       <div className="text-xs text-muted-foreground">/{studio.slug}</div>
@@ -553,8 +777,8 @@ function StudiosSection() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
 
       <Dialog open={!!editStudio} onOpenChange={() => setEditStudio(null)}>
         <DialogContent>
@@ -647,6 +871,7 @@ function ProductionsSection() {
   const { data: prods = [], isLoading } = useQuery({
     queryKey: ["/api/admin/productions"],
     queryFn: () => authFetch("/api/admin/productions") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   const deleteMut = useMutation({
@@ -664,21 +889,21 @@ function ProductionsSection() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar producoes..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <Card>
-        <CardContent className="p-0">
+      <div className="vhub-card overflow-hidden">
+        <div className="p-0">
           {isLoading ? <div className="p-6 text-sm text-muted-foreground">Carregando...</div> : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left p-3 font-medium">Producao</th>
-                  <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium hidden md:table-cell">Criado em</th>
-                  <th className="text-right p-3 font-medium">Acoes</th>
+                <tr className="border-b border-white/8 bg-white/3">
+                  <th className="text-left p-3 font-medium text-foreground/70">Producao</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Status</th>
+                  <th className="text-left p-3 font-medium text-foreground/70 hidden md:table-cell">Criado em</th>
+                  <th className="text-right p-3 font-medium text-foreground/70">Acoes</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((prod: any) => (
-                  <tr key={prod.id} className="border-b last:border-0 hover:bg-muted/20" data-testid={`row-production-${prod.id}`}>
+                  <tr key={prod.id} className="border-b border-white/6 last:border-0 hover:bg-white/3" data-testid={`row-production-${prod.id}`}>
                     <td className="p-3">
                       <div className="font-medium">{prod.name}</div>
                       {prod.description && <div className="text-xs text-muted-foreground truncate max-w-xs">{prod.description}</div>}
@@ -702,8 +927,8 @@ function ProductionsSection() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       <ConfirmDialog
         open={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
@@ -724,6 +949,7 @@ function SessionsSection() {
   const { data: sessData = [], isLoading } = useQuery({
     queryKey: ["/api/admin/sessions"],
     queryFn: () => authFetch("/api/admin/sessions") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   const deleteMut = useMutation({
@@ -753,21 +979,21 @@ function SessionsSection() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar sessoes..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <Card>
-        <CardContent className="p-0">
+      <div className="vhub-card overflow-hidden">
+        <div className="p-0">
           {isLoading ? <div className="p-6 text-sm text-muted-foreground">Carregando...</div> : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left p-3 font-medium">Sessao</th>
-                  <th className="text-left p-3 font-medium">Status</th>
-                  <th className="text-left p-3 font-medium hidden md:table-cell">Agendada</th>
-                  <th className="text-right p-3 font-medium">Acoes</th>
+                <tr className="border-b border-white/8 bg-white/3">
+                  <th className="text-left p-3 font-medium text-foreground/70">Sessao</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Status</th>
+                  <th className="text-left p-3 font-medium text-foreground/70 hidden md:table-cell">Agendada</th>
+                  <th className="text-right p-3 font-medium text-foreground/70">Acoes</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((sess: any) => (
-                  <tr key={sess.id} className="border-b last:border-0 hover:bg-muted/20" data-testid={`row-session-${sess.id}`}>
+                  <tr key={sess.id} className="border-b border-white/6 last:border-0 hover:bg-white/3" data-testid={`row-session-${sess.id}`}>
                     <td className="p-3">
                       <div className="font-medium">{sess.title}</div>
                       <div className="text-xs text-muted-foreground">{sess.durationMinutes} min</div>
@@ -796,8 +1022,8 @@ function SessionsSection() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       <ConfirmDialog
         open={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
@@ -817,6 +1043,7 @@ function TakesSection() {
   const { data: takesList = [], isLoading } = useQuery({
     queryKey: ["/api/admin/takes"],
     queryFn: () => authFetch("/api/admin/takes") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   const deleteMut = useMutation({
@@ -831,27 +1058,27 @@ function TakesSection() {
         <h2 className="text-xl font-semibold">Audio Takes</h2>
         <span className="text-sm text-muted-foreground">{takesList.length} takes no total</span>
       </div>
-      <Card>
-        <CardContent className="p-0">
+      <div className="vhub-card overflow-hidden">
+        <div className="p-0">
           {isLoading ? <div className="p-6 text-sm text-muted-foreground">Carregando...</div> : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left p-3 font-medium">ID do Take</th>
-                  <th className="text-left p-3 font-medium">Qualidade</th>
-                  <th className="text-left p-3 font-medium">Marcadores</th>
-                  <th className="text-left p-3 font-medium hidden md:table-cell">Duracao</th>
-                  <th className="text-left p-3 font-medium hidden md:table-cell">Criado em</th>
-                  <th className="text-right p-3 font-medium">Acoes</th>
+                <tr className="border-b border-white/8 bg-white/3">
+                  <th className="text-left p-3 font-medium text-foreground/70">ID do Take</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Qualidade</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Marcadores</th>
+                  <th className="text-left p-3 font-medium text-foreground/70 hidden md:table-cell">Duracao</th>
+                  <th className="text-left p-3 font-medium text-foreground/70 hidden md:table-cell">Criado em</th>
+                  <th className="text-right p-3 font-medium text-foreground/70">Acoes</th>
                 </tr>
               </thead>
               <tbody>
                 {takesList.map((take: any) => (
-                  <tr key={take.id} className="border-b last:border-0 hover:bg-muted/20" data-testid={`row-take-${take.id}`}>
+                  <tr key={take.id} className="border-b border-white/6 last:border-0 hover:bg-white/3" data-testid={`row-take-${take.id}`}>
                     <td className="p-3 font-mono text-xs">{take.id.slice(0, 8)}…</td>
                     <td className="p-3">
                       {take.qualityScore !== null ? (
-                        <span className={`font-medium ${take.qualityScore >= 80 ? "text-green-600" : take.qualityScore >= 50 ? "text-amber-600" : "text-red-600"}`}>
+                        <span className={`font-medium ${take.qualityScore >= 80 ? "text-emerald-400" : take.qualityScore >= 50 ? "text-amber-400" : "text-red-400"}`}>
                           {Math.round(take.qualityScore)}
                         </span>
                       ) : "—"}
@@ -879,8 +1106,8 @@ function TakesSection() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
       <ConfirmDialog
         open={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
@@ -898,6 +1125,7 @@ function LogsSection() {
   const { data: logs = [], isLoading, refetch } = useQuery({
     queryKey: ["/api/admin/audit"],
     queryFn: () => authFetch("/api/admin/audit") as Promise<any[]>,
+    refetchInterval: 5000,
   });
 
   const filtered = logs.filter(l =>
@@ -915,20 +1143,20 @@ function LogsSection() {
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar logs..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
-      <Card>
-        <CardContent className="p-0">
+      <div className="vhub-card overflow-hidden">
+        <div className="p-0">
           {isLoading ? <div className="p-6 text-sm text-muted-foreground">Carregando...</div> : (
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/40">
-                  <th className="text-left p-3 font-medium">Data/Hora</th>
-                  <th className="text-left p-3 font-medium">Acao</th>
-                  <th className="text-left p-3 font-medium">Detalhes</th>
+                <tr className="border-b border-white/8 bg-white/3">
+                  <th className="text-left p-3 font-medium text-foreground/70">Data/Hora</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Acao</th>
+                  <th className="text-left p-3 font-medium text-foreground/70">Detalhes</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((log: any) => (
-                  <tr key={log.id} className="border-b last:border-0 hover:bg-muted/20" data-testid={`row-log-${log.id}`}>
+                  <tr key={log.id} className="border-b border-white/6 last:border-0 hover:bg-white/3" data-testid={`row-log-${log.id}`}>
                     <td className="p-3 text-muted-foreground text-xs whitespace-nowrap">
                       {new Date(log.createdAt).toLocaleString()}
                     </td>
@@ -940,8 +1168,8 @@ function LogsSection() {
               </tbody>
             </table>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -955,6 +1183,7 @@ function IntegrationsSection() {
   const { data: settings, isLoading } = useQuery({
     queryKey: ["/api/admin/settings"],
     queryFn: () => authFetch("/api/admin/settings") as Promise<Record<string, string>>,
+    refetchInterval: 5000,
   });
 
   const saveMut = useMutation({
@@ -974,16 +1203,18 @@ function IntegrationsSection() {
   return (
     <div className="space-y-6">
       <h2 className="text-xl font-semibold">API e Integracoes</h2>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2"><HardDrive className="h-5 w-5" /> Armazenamento Google Drive</CardTitle>
-          <CardDescription>
+      <div className="vhub-card overflow-hidden">
+        <div className="vhub-card-header">
+          <div className="flex items-center gap-2 text-sm font-medium text-foreground/80">
+            <HardDrive className="h-5 w-5" /> Armazenamento Google Drive
+          </div>
+        </div>
+        <div className="vhub-card-body space-y-6">
+          <p className="text-xs text-muted-foreground">
             Configure onde os arquivos WAV gravados sao armazenados.
-            Os arquivos sao organizados como <code className="text-xs bg-muted px-1 rounded">Estudio/Producao/Personagem/Ator/arquivo.wav</code>
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="flex items-center gap-3 p-3 rounded-lg border bg-muted/30">
+            Os arquivos sao organizados como <code className="text-xs bg-white/5 px-1 rounded">Estudio/Producao/Personagem/Ator/arquivo.wav</code>
+          </p>
+          <div className="flex items-center gap-3 p-3 rounded-lg border border-white/8 bg-white/3">
             <CheckCircle2 className="h-5 w-5 text-green-500 shrink-0" />
             <div>
               <p className="text-sm font-medium">Google Drive Conectado</p>
@@ -1008,7 +1239,7 @@ function IntegrationsSection() {
               </p>
             )}
           </div>
-          <div className="rounded-lg border bg-muted/30 p-4 space-y-2">
+          <div className="rounded-lg border border-white/8 bg-white/3 p-4 space-y-2">
             <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Estrutura de Pastas</p>
             <pre className="text-xs text-muted-foreground font-mono">{`Root Folder/
   StudioName/
@@ -1021,8 +1252,8 @@ function IntegrationsSection() {
             {saved ? <CheckCircle2 className="h-4 w-4" /> : <Save className="h-4 w-4" />}
             {saved ? "Salvo" : "Salvar Configuracoes"}
           </Button>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
@@ -1031,6 +1262,14 @@ export default function Admin() {
   const { user } = useAuth();
   const [, setLocation] = useLocation();
   const [section, setSection] = useState<Section>("overview");
+
+  const { data: stats } = useQuery({
+    queryKey: ["/api/admin/stats"],
+    queryFn: () => authFetch("/api/admin/stats") as Promise<Record<string, number>>,
+    refetchInterval: 5000,
+  });
+
+  const pendingCount = stats?.pendingUsers ?? 0;
 
   if (!user) return null;
 
@@ -1047,6 +1286,7 @@ export default function Admin() {
 
   const sectionMap: Record<Section, React.ReactNode> = {
     overview: <OverviewSection />,
+    pending: <PendingUsersSection />,
     users: <UsersSection />,
     studios: <StudiosSection />,
     productions: <ProductionsSection />,
@@ -1057,14 +1297,26 @@ export default function Admin() {
   };
 
   return (
-    <div className="min-h-screen bg-background flex">
-      <aside className="w-60 shrink-0 border-r border-border bg-card flex flex-col">
-        <div className="px-4 py-5 border-b">
+    <div className="min-h-screen flex">
+      <aside className="w-60 shrink-0 flex flex-col vhub-sidebar">
+        <div className="px-4 py-5 border-b border-white/6">
           <div className="flex items-center gap-2">
-            <ShieldAlert className="h-5 w-5 text-destructive" />
-            <span className="font-bold tracking-tight">Painel Admin</span>
+            <div className="w-8 h-8 rounded-lg bg-rose-500/15 flex items-center justify-center">
+              <ShieldAlert className="h-4 w-4 text-rose-400" />
+            </div>
+            <span className="font-bold tracking-tight text-foreground">Painel Admin</span>
           </div>
           <p className="text-xs text-muted-foreground mt-1">Proprietario da Plataforma</p>
+          {pendingCount > 0 && (
+            <button
+              onClick={() => setSection("pending")}
+              className="mt-2 w-full flex items-center gap-2 px-2 py-1.5 rounded-md bg-amber-500/12 text-amber-400 text-xs font-medium border border-amber-500/25"
+              data-testid="button-quick-pending"
+            >
+              <AlertCircle className="h-3.5 w-3.5" />
+              Pendentes: {pendingCount}
+            </button>
+          )}
         </div>
         <nav className="flex-1 py-3 px-2 space-y-0.5">
           {NAV.map(item => (
@@ -1072,18 +1324,23 @@ export default function Admin() {
               key={item.id}
               onClick={() => setSection(item.id)}
               data-testid={`nav-${item.id}`}
-              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors text-left ${
+              className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150 text-left ${
                 section === item.id
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                  ? "bg-gradient-to-r from-primary/20 to-accent/15 text-foreground border-l-2 border-primary"
+                  : "text-muted-foreground hover:text-foreground hover:bg-white/5"
               }`}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              {item.label}
+              <span className="flex-1">{item.label}</span>
+              {item.id === "pending" && pendingCount > 0 && (
+                <Badge variant="destructive" className="text-[10px] px-1.5 py-0" data-testid="badge-nav-pending">
+                  {pendingCount}
+                </Badge>
+              )}
             </button>
           ))}
         </nav>
-        <div className="p-3 border-t">
+        <div className="p-3 border-t border-white/6">
           <Button variant="ghost" size="sm" className="w-full justify-start gap-2 text-muted-foreground" onClick={() => setLocation("/studios")} data-testid="button-exit-admin">
             <LogOut className="h-4 w-4" />
             Sair do Admin
@@ -1092,7 +1349,7 @@ export default function Admin() {
       </aside>
 
       <main className="flex-1 p-6 md:p-8 overflow-auto">
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-5xl mx-auto page-enter">
           {sectionMap[section]}
         </div>
       </main>

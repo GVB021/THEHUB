@@ -68,14 +68,14 @@ function JitsiMeetPanel({ roomId, displayName }: { roomId: string; displayName: 
   ].join("");
 
   return (
-    <div className="mt-4 border border-zinc-200 rounded-xl overflow-hidden" data-testid="panel-jitsi">
-      <div className="flex items-center justify-between px-4 py-2.5 border-b border-zinc-100 bg-zinc-50">
-        <span className="text-xs font-medium text-zinc-600 flex items-center gap-1.5">
-          <Mic className="w-3 h-3 text-green-500" /> Chat de Voz — Sala {jitsiRoom.slice(-6)}
+    <div className="mt-4 rounded-xl overflow-hidden" style={{ border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.04)" }} data-testid="panel-jitsi">
+      <div className="flex items-center justify-between px-4 py-2.5" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)" }}>
+        <span className="text-xs font-medium flex items-center gap-1.5" style={{ color: "rgba(255,255,255,0.60)" }}>
+          <Mic className="w-3 h-3" style={{ color: "hsl(160 84% 60%)" }} /> Chat de Voz — Sala {jitsiRoom.slice(-6)}
         </span>
         <button
           onClick={() => setIsOpen(v => !v)}
-          className="text-xs text-zinc-400 hover:text-zinc-700 transition-colors flex items-center gap-1"
+          className="text-xs transition-colors flex items-center gap-1" style={{ color: "rgba(255,255,255,0.40)" }}
           data-testid="button-toggle-jitsi"
         >
           {isOpen ? <><X className="w-3 h-3" /> Minimizar</> : <><Mic className="w-3 h-3" /> Abrir</>}
@@ -156,12 +156,12 @@ function keyLabel(code: string): string {
 
 function CountdownOverlay({ count }: { count: number }) {
   return (
-    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+    <div className="absolute inset-0 z-50 flex flex-col items-center justify-center animate-in fade-in duration-200" style={{ background: "rgba(0,0,0,0.7)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
       <div className="flex flex-col items-center gap-4">
-        <div className="w-24 h-24 rounded-full border-4 border-red-400/40 flex items-center justify-center">
-          <span className="text-6xl font-light text-red-400 font-mono tabular-nums">{count}</span>
+        <div className="w-24 h-24 rounded-full flex items-center justify-center" style={{ border: "4px solid rgba(239,68,68,0.4)", boxShadow: "0 0 40px rgba(239,68,68,0.3), inset 0 0 20px rgba(239,68,68,0.1)" }}>
+          <span className="text-6xl font-light font-mono tabular-nums" style={{ color: "hsl(0 72% 65%)", textShadow: "0 0 20px rgba(239,68,68,0.5)" }}>{count}</span>
         </div>
-        <span className="text-xs text-zinc-400 uppercase tracking-widest">Gravando em...</span>
+        <span className="text-xs uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.45)" }}>Gravando em...</span>
       </div>
     </div>
   );
@@ -229,13 +229,13 @@ function DeviceSettingsPanel({
   const speakers = devices.filter((d) => d.kind === "audiooutput");
 
   return (
-    <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-      <div className="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-[400px] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
-          <span className="text-sm font-semibold text-zinc-900">Configuracoes de Dispositivo</span>
+    <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+      <div className="rounded-2xl w-[400px] overflow-hidden" style={{ background: "rgba(15,15,30,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 12px 48px rgba(0,0,0,0.5)" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+          <span className="text-sm font-semibold" style={{ color: "hsl(210 40% 96%)" }}>Configuracoes de Dispositivo</span>
           <button
             onClick={onClose}
-            className="text-zinc-400 hover:text-zinc-700 transition-colors"
+            className="transition-colors" style={{ color: "rgba(255,255,255,0.40)" }}
             data-testid="button-close-device-settings"
           >
             <X className="w-4 h-4" />
@@ -243,9 +243,9 @@ function DeviceSettingsPanel({
         </div>
         <div className="px-6 py-5 flex flex-col gap-5">
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-2 block">Microfone</label>
+            <label className="vhub-label mb-2 block">Microfone</label>
             <select
-              className="w-full h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-900"
+              className="w-full h-9 rounded-lg px-3 text-sm"
               value={settings.inputDeviceId}
               onChange={(e) => onSettingsChange({ ...settings, inputDeviceId: e.target.value })}
               data-testid="select-microphone"
@@ -258,9 +258,9 @@ function DeviceSettingsPanel({
             </select>
           </div>
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-2 block">Alto-falante</label>
+            <label className="vhub-label mb-2 block">Alto-falante</label>
             <select
-              className="w-full h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-900"
+              className="w-full h-9 rounded-lg px-3 text-sm"
               value={settings.outputDeviceId}
               onChange={(e) => onSettingsChange({ ...settings, outputDeviceId: e.target.value })}
               data-testid="select-speaker"
@@ -279,8 +279,8 @@ function DeviceSettingsPanel({
           <div className="flex flex-col gap-4">
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">Ganho de Entrada</label>
-                <span className="text-xs text-zinc-500 font-mono">{Math.round(settings.inputGain * 100)}%</span>
+                <label className="vhub-label">Ganho de Entrada</label>
+                <span className="text-xs font-mono" style={{ color: "rgba(255,255,255,0.50)" }}>{Math.round(settings.inputGain * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -291,14 +291,14 @@ function DeviceSettingsPanel({
                 onChange={(e) =>
                   onSettingsChange({ ...settings, inputGain: parseFloat(e.target.value) })
                 }
-                className="w-full h-1.5 accent-blue-600"
+                className="w-full h-1.5 accent-blue-500"
                 data-testid="slider-input-gain"
               />
             </div>
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500">Volume do Monitor</label>
-                <span className="text-xs text-zinc-500 font-mono">{Math.round(settings.monitorVolume * 100)}%</span>
+                <label className="vhub-label">Volume do Monitor</label>
+                <span className="text-xs font-mono" style={{ color: "rgba(255,255,255,0.50)" }}>{Math.round(settings.monitorVolume * 100)}%</span>
               </div>
               <input
                 type="range"
@@ -309,23 +309,23 @@ function DeviceSettingsPanel({
                 onChange={(e) =>
                   onSettingsChange({ ...settings, monitorVolume: parseFloat(e.target.value) })
                 }
-                className="w-full h-1.5 accent-blue-600"
+                className="w-full h-1.5 accent-blue-500"
                 data-testid="slider-monitor-volume"
               />
             </div>
           </div>
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-2 block">Modo de Captura de Voz</label>
+            <label className="vhub-label mb-2 block">Modo de Captura de Voz</label>
             <select
               value={settings.voiceCaptureMode}
               onChange={(e) => onSettingsChange({ ...settings, voiceCaptureMode: e.target.value as VoiceCaptureMode })}
-              className="w-full h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-900"
+              className="w-full h-9 rounded-lg px-3 text-sm"
               data-testid="select-voice-capture-mode"
             >
               <option value="studio">Studio Mode (Isolamento de Voz)</option>
               <option value="original">Original Microphone (Som Natural)</option>
             </select>
-            <p className="text-[10px] text-zinc-400 mt-1.5">
+            <p className="text-[10px] mt-1.5" style={{ color: "rgba(255,255,255,0.35)" }}>
               {settings.voiceCaptureMode === "studio"
                 ? "Filtro passa-alta 80Hz + compressor + reducao de ruido. Ideal para estudio."
                 : "Captura crua sem processamento. Audio exatamente como o microfone capta."}
@@ -334,7 +334,7 @@ function DeviceSettingsPanel({
           <div className="flex justify-end">
             <button
               onClick={onClose}
-              className="px-4 py-1.5 rounded-lg text-xs bg-blue-600 hover:bg-blue-500 text-white transition-colors font-medium"
+              className="vhub-btn-sm vhub-btn-primary"
               data-testid="button-apply-device-settings"
             >
               Aplicar
@@ -402,26 +402,26 @@ function RecordingProfilePanel({
   const canSubmit = actorName.trim() && (hasCharacters ? !!selectedCharId : freeCharName.trim());
 
   return (
-    <div className="absolute inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-[440px] overflow-hidden">
-        <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
+    <div className="absolute inset-0 z-50 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+      <div className="rounded-2xl w-[440px] overflow-hidden" style={{ background: "rgba(15,15,30,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 12px 48px rgba(0,0,0,0.5)" }}>
+        <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
           <div className="flex items-center gap-2">
-            <User className="w-4 h-4 text-blue-600" />
-            <span className="text-sm font-semibold text-zinc-900">Perfil de Gravacao</span>
+            <User className="w-4 h-4" style={{ color: "hsl(220 100% 65%)" }} />
+            <span className="text-sm font-semibold" style={{ color: "hsl(210 40% 96%)" }}>Perfil de Gravacao</span>
           </div>
           {onClose && (
-            <button onClick={onClose} className="text-zinc-400 hover:text-zinc-700 transition-colors" data-testid="button-close-profile">
+            <button onClick={onClose} className="transition-colors" style={{ color: "rgba(255,255,255,0.40)" }} data-testid="button-close-profile">
               <X className="w-4 h-4" />
             </button>
           )}
         </div>
         <div className="px-6 py-5 flex flex-col gap-4">
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.50)" }}>
             Configure seu perfil antes de gravar. Estes dados serao usados automaticamente em todos os takes.
           </p>
 
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1.5 block">
+            <label className="vhub-label mb-1.5 block">
               Nome do Dublador
             </label>
             <input
@@ -429,20 +429,20 @@ function RecordingProfilePanel({
               value={actorName}
               onChange={(e) => setActorName(e.target.value)}
               placeholder="Seu nome artistico"
-              className="w-full h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+              className="w-full h-9 rounded-lg px-3 text-sm"
               data-testid="input-actor-name"
             />
           </div>
 
           <div>
-            <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-500 mb-1.5 block">
+            <label className="vhub-label mb-1.5 block">
               Personagem
             </label>
             {hasCharacters ? (
               <select
                 value={selectedCharId}
                 onChange={(e) => setSelectedCharId(e.target.value)}
-                className="w-full h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                className="w-full h-9 rounded-lg px-3 text-sm"
                 data-testid="select-character"
               >
                 {characters.map((c) => (
@@ -457,7 +457,7 @@ function RecordingProfilePanel({
                 value={freeCharName}
                 onChange={(e) => setFreeCharName(e.target.value)}
                 placeholder="Nome do personagem"
-                className="w-full h-9 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-400"
+                className="w-full h-9 rounded-lg px-3 text-sm"
                 data-testid="input-character-name"
               />
             )}
@@ -465,24 +465,24 @@ function RecordingProfilePanel({
 
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-400 mb-1 block">ID Usuario</label>
-              <div className="h-8 rounded-lg bg-zinc-100 px-3 flex items-center text-xs text-zinc-500 font-mono truncate" data-testid="text-user-id">
+              <label className="vhub-label mb-1 block">ID Usuario</label>
+              <div className="h-8 rounded-lg px-3 flex items-center text-xs font-mono truncate" style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)" }} data-testid="text-user-id">
                 {user?.id?.slice(0, 12)}...
               </div>
             </div>
             <div>
-              <label className="text-[10px] font-semibold uppercase tracking-[0.1em] text-zinc-400 mb-1 block">Sessao</label>
-              <div className="h-8 rounded-lg bg-zinc-100 px-3 flex items-center text-xs text-zinc-500 font-mono truncate" data-testid="text-session-id">
+              <label className="vhub-label mb-1 block">Sessao</label>
+              <div className="h-8 rounded-lg px-3 flex items-center text-xs font-mono truncate" style={{ background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.45)" }} data-testid="text-session-id">
                 {sessionId?.slice(0, 12)}...
               </div>
             </div>
           </div>
         </div>
-        <div className="px-6 py-4 border-t border-zinc-100 flex justify-end">
+        <div className="px-6 py-4 flex justify-end" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
           <button
             onClick={handleSubmit}
             disabled={!canSubmit}
-            className="px-5 py-2 rounded-lg text-sm bg-blue-600 hover:bg-blue-500 text-white transition-colors font-medium disabled:opacity-40 disabled:cursor-not-allowed"
+            className="vhub-btn-sm vhub-btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
             data-testid="button-save-profile"
           >
             Iniciar Gravacao
@@ -1079,10 +1079,10 @@ export default function RecordingRoom() {
 
   if (sessionLoading || (session && productionLoading)) {
     return (
-      <div className="h-screen w-screen bg-[#f5f5f7] flex items-center justify-center">
+      <div className="h-screen w-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0a0a1a, #0d1125, #0a0a1a)" }}>
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-full border-2 border-zinc-200 border-t-blue-500 animate-spin" />
-          <p className="text-sm text-zinc-500">Carregando sala de gravacao...</p>
+          <div className="w-12 h-12 rounded-full animate-spin" style={{ border: "2px solid rgba(255,255,255,0.10)", borderTopColor: "hsl(220 100% 55%)" }} />
+          <p className="text-sm" style={{ color: "rgba(255,255,255,0.45)" }}>Carregando sala de gravacao...</p>
         </div>
       </div>
     );
@@ -1090,13 +1090,13 @@ export default function RecordingRoom() {
 
   if (sessionError) {
     return (
-      <div className="h-screen w-screen bg-[#f5f5f7] flex items-center justify-center">
+      <div className="h-screen w-screen flex items-center justify-center" style={{ background: "linear-gradient(135deg, #0a0a1a, #0d1125, #0a0a1a)" }}>
         <div className="flex flex-col items-center gap-4 text-center px-6">
-          <AlertCircle className="w-12 h-12 text-red-400" />
-          <p className="text-sm text-zinc-700 font-medium">Erro ao carregar sessao</p>
-          <p className="text-xs text-zinc-400">Verifique se voce tem acesso a este estudio e sessao.</p>
+          <AlertCircle className="w-12 h-12" style={{ color: "hsl(0 72% 65%)" }} />
+          <p className="text-sm font-medium" style={{ color: "hsl(210 40% 96%)" }}>Erro ao carregar sessao</p>
+          <p className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>Verifique se voce tem acesso a este estudio e sessao.</p>
           <Link href={`/studio/${studioId}/sessions`}>
-            <button className="mt-2 px-4 py-2 rounded-lg text-xs bg-blue-600 text-white hover:bg-blue-500 transition-colors" data-testid="button-back-sessions">
+            <button className="mt-2 vhub-btn-sm vhub-btn-primary" data-testid="button-back-sessions">
               Voltar para Sessoes
             </button>
           </Link>
@@ -1106,19 +1106,19 @@ export default function RecordingRoom() {
   }
 
   return (
-    <div className="h-screen w-screen bg-[#f5f5f7] text-zinc-900 overflow-hidden flex flex-col select-none relative">
+    <div className="h-screen w-screen overflow-hidden flex flex-col select-none relative" style={{ background: "linear-gradient(135deg, #0a0a1a, #0d1125, #0a0a1a)", color: "hsl(210 40% 96%)" }}>
       {recordingStatus === "countdown" && countdownValue > 0 && (
         <CountdownOverlay count={countdownValue} />
       )}
 
       {isCustomizing && (
-        <div className="absolute inset-0 z-40 flex items-center justify-center bg-black/40 backdrop-blur-sm">
-          <div className="bg-white border border-zinc-200 rounded-2xl shadow-2xl w-[420px] overflow-hidden">
-            <div className="flex items-center justify-between px-6 py-4 border-b border-zinc-100">
-              <span className="text-sm font-semibold text-zinc-900">Atalhos de Teclado</span>
+        <div className="absolute inset-0 z-40 flex items-center justify-center" style={{ background: "rgba(0,0,0,0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }}>
+          <div className="rounded-2xl w-[420px] overflow-hidden" style={{ background: "rgba(15,15,30,0.92)", backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)", border: "1px solid rgba(255,255,255,0.10)", boxShadow: "0 12px 48px rgba(0,0,0,0.5)" }}>
+            <div className="flex items-center justify-between px-6 py-4" style={{ borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
+              <span className="text-sm font-semibold" style={{ color: "hsl(210 40% 96%)" }}>Atalhos de Teclado</span>
               <button
                 onClick={() => { setIsCustomizing(false); setPendingShortcuts(shortcuts); setListeningFor(null); }}
-                className="text-zinc-400 hover:text-zinc-700 transition-colors"
+                className="transition-colors" style={{ color: "rgba(255,255,255,0.40)" }}
                 data-testid="button-close-shortcuts"
               >
                 <X className="w-4 h-4" />
@@ -1127,14 +1127,18 @@ export default function RecordingRoom() {
             <div className="px-6 py-4 flex flex-col gap-2">
               {(Object.keys(SHORTCUT_LABELS) as Array<keyof Shortcuts>).map((key) => (
                 <div key={key} className="flex items-center justify-between">
-                  <span className="text-sm text-zinc-600">{SHORTCUT_LABELS[key]}</span>
+                  <span className="text-sm" style={{ color: "rgba(255,255,255,0.70)" }}>{SHORTCUT_LABELS[key]}</span>
                   <button
                     onClick={() => setListeningFor(key)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-mono min-w-[80px] text-center transition-all border ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono min-w-[80px] text-center transition-all ${
                       listeningFor === key
-                        ? "border-blue-500 bg-blue-50 text-blue-600 animate-pulse"
-                        : "border-zinc-200 bg-zinc-50 text-zinc-700 hover:border-zinc-300"
+                        ? "animate-pulse"
+                        : ""
                     }`}
+                    style={listeningFor === key
+                      ? { border: "1px solid hsl(220 100% 55%)", background: "rgba(59,130,246,0.12)", color: "hsl(220 100% 65%)" }
+                      : { border: "1px solid rgba(255,255,255,0.10)", background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.70)" }
+                    }
                     data-testid={`shortcut-btn-${key}`}
                   >
                     {listeningFor === key ? "Pressione tecla\u2026" : keyLabel(pendingShortcuts[key])}
@@ -1142,10 +1146,10 @@ export default function RecordingRoom() {
                 </div>
               ))}
             </div>
-            <div className="px-6 py-4 border-t border-zinc-100 flex justify-between gap-3">
+            <div className="px-6 py-4 flex justify-between gap-3" style={{ borderTop: "1px solid rgba(255,255,255,0.08)" }}>
               <button
                 onClick={() => { setPendingShortcuts(DEFAULT_SHORTCUTS); setListeningFor(null); }}
-                className="text-xs text-zinc-400 hover:text-zinc-600 transition-colors"
+                className="text-xs transition-colors" style={{ color: "rgba(255,255,255,0.40)" }}
                 data-testid="button-reset-shortcuts"
               >
                 Restaurar padroes
@@ -1153,7 +1157,7 @@ export default function RecordingRoom() {
               <div className="flex gap-2">
                 <button
                   onClick={() => { setShortcuts(pendingShortcuts); setIsCustomizing(false); toast({ title: "Atalhos atualizados (apenas nesta sessao)" }); }}
-                  className="px-4 py-1.5 rounded-lg text-xs bg-zinc-100 hover:bg-zinc-200 text-zinc-700 transition-colors"
+                  className="vhub-btn-xs vhub-btn-secondary"
                   data-testid="button-apply-shortcuts"
                 >
                   Aplicar
@@ -1165,7 +1169,7 @@ export default function RecordingRoom() {
                     setIsCustomizing(false);
                     toast({ title: "Atalhos salvos como padrao" });
                   }}
-                  className="px-4 py-1.5 rounded-lg text-xs bg-blue-600 hover:bg-blue-500 text-white transition-colors font-medium"
+                  className="vhub-btn-xs vhub-btn-primary"
                   data-testid="button-save-shortcuts"
                 >
                   Salvar como Padrao
@@ -1195,26 +1199,26 @@ export default function RecordingRoom() {
         />
       )}
 
-      <header className="h-[52px] shrink-0 flex items-center justify-between px-5 border-b border-zinc-200/80 bg-white/90 backdrop-blur-sm">
+      <header className="h-[52px] shrink-0 flex items-center justify-between px-5" style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-4">
           <Link href={`/studio/${studioId}/sessions`}>
-            <button className="flex items-center gap-2 text-zinc-400 hover:text-zinc-900 text-sm transition-colors" data-testid="button-exit-room">
+            <button className="flex items-center gap-2 text-sm transition-colors" style={{ color: "rgba(255,255,255,0.45)" }} data-testid="button-exit-room">
               <ArrowLeft className="w-4 h-4" />
               Sair
             </button>
           </Link>
-          <div className="h-4 w-px bg-zinc-200" />
+          <div className="h-4 w-px" style={{ background: "rgba(255,255,255,0.10)" }} />
           <div className="flex items-baseline gap-2">
-            <span className="font-medium text-sm text-zinc-900">{production?.name || "Carregando\u2026"}</span>
-            <span className="text-xs text-zinc-400">{session?.title}</span>
+            <span className="font-medium text-sm" style={{ color: "hsl(210 40% 96%)" }}>{production?.name || "Carregando\u2026"}</span>
+            <span className="text-xs" style={{ color: "rgba(255,255,255,0.45)" }}>{session?.title}</span>
           </div>
           {recordingStatus === "recording" && (
-            <span className="flex items-center gap-1.5 text-xs text-red-600 bg-red-50 border border-red-200 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full" style={{ color: "hsl(0 72% 65%)", background: "rgba(239,68,68,0.12)", border: "1px solid rgba(239,68,68,0.25)" }}>
               <Circle className="w-2 h-2 fill-red-500 animate-pulse" /> REC
             </span>
           )}
           {recordingStatus === "recorded" && (
-            <span className="flex items-center gap-1.5 text-xs text-amber-600 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+            <span className="flex items-center gap-1.5 text-xs px-2 py-0.5 rounded-full" style={{ color: "hsl(45 93% 55%)", background: "rgba(245,158,11,0.12)", border: "1px solid rgba(245,158,11,0.25)" }}>
               <AlertCircle className="w-3 h-3" /> Nao salvo
             </span>
           )}
@@ -1222,26 +1226,27 @@ export default function RecordingRoom() {
 
         <div className="flex items-center gap-3 text-xs">
           {!micReady && (
-            <span className="text-red-500 flex items-center gap-1">
+            <span className="flex items-center gap-1" style={{ color: "hsl(0 72% 65%)" }}>
               <MicOff className="w-3.5 h-3.5" /> Sem mic
             </span>
           )}
           {micReady && (
-            <span className="text-emerald-600 flex items-center gap-1">
+            <span className="flex items-center gap-1" style={{ color: "hsl(160 84% 60%)" }}>
               <Mic className="w-3.5 h-3.5" /> 48kHz / 24bit
             </span>
           )}
-          <div className="w-px h-4 bg-zinc-200" />
+          <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.10)" }} />
           {recordingProfile ? (
             <div className="flex items-center gap-1.5">
-              <User className="w-3.5 h-3.5 text-blue-500" />
-              <span className="text-zinc-700 font-medium">{recordingProfile.voiceActorName}</span>
-              <span className="text-zinc-400">/</span>
+              <User className="w-3.5 h-3.5" style={{ color: "hsl(220 100% 65%)" }} />
+              <span className="font-medium" style={{ color: "rgba(255,255,255,0.80)" }}>{recordingProfile.voiceActorName}</span>
+              <span style={{ color: "rgba(255,255,255,0.30)" }}>/</span>
               {charactersList && charactersList.length > 1 ? (
                 <select
                   value={recordingProfile.characterId}
                   onChange={(e) => handleChangeCharacter(e.target.value)}
-                  className="text-blue-600 font-medium bg-transparent border-none text-xs cursor-pointer focus:outline-none pr-1"
+                  className="font-medium bg-transparent border-none text-xs cursor-pointer focus:outline-none pr-1"
+                  style={{ color: "hsl(220 100% 65%)" }}
                   data-testid="select-active-character"
                 >
                   {charactersList.map((c) => (
@@ -1249,11 +1254,11 @@ export default function RecordingRoom() {
                   ))}
                 </select>
               ) : (
-                <span className="text-blue-600 font-medium" data-testid="text-active-character">{recordingProfile.characterName}</span>
+                <span className="font-medium" style={{ color: "hsl(220 100% 65%)" }} data-testid="text-active-character">{recordingProfile.characterName}</span>
               )}
               <button
                 onClick={() => setShowProfilePanel(true)}
-                className="ml-1 text-zinc-400 hover:text-zinc-700 transition-colors"
+                className="ml-1 transition-colors" style={{ color: "rgba(255,255,255,0.40)" }}
                 data-testid="button-edit-profile"
                 title="Editar perfil"
               >
@@ -1263,31 +1268,31 @@ export default function RecordingRoom() {
           ) : (
             <button
               onClick={() => setShowProfilePanel(true)}
-              className="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 transition-colors"
+              className="flex items-center gap-1.5 transition-colors" style={{ color: "hsl(45 93% 55%)" }}
               data-testid="button-setup-profile"
             >
               <User className="w-3.5 h-3.5" />
               Definir Perfil
             </button>
           )}
-          <div className="w-px h-4 bg-zinc-200" />
-          <span className="text-zinc-400">
-            <CheckCircle2 className="w-3.5 h-3.5 inline mr-1 text-emerald-500" />
+          <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.10)" }} />
+          <span style={{ color: "rgba(255,255,255,0.45)" }}>
+            <CheckCircle2 className="w-3.5 h-3.5 inline mr-1" style={{ color: "hsl(160 84% 60%)" }} />
             {takeCount} take{takeCount !== 1 ? "s" : ""}
           </span>
-          <div className="w-px h-4 bg-zinc-200" />
+          <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.10)" }} />
           <button
             onClick={() => setDeviceSettingsOpen(true)}
-            className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-700 transition-colors"
+            className="flex items-center gap-1.5 transition-colors" style={{ color: "rgba(255,255,255,0.45)" }}
             data-testid="button-open-device-settings"
           >
             <Monitor className="w-3.5 h-3.5" />
             Dispositivos
           </button>
-          <div className="w-px h-4 bg-zinc-200" />
+          <div className="w-px h-4" style={{ background: "rgba(255,255,255,0.10)" }} />
           <button
             onClick={() => { setIsCustomizing(true); setPendingShortcuts(shortcuts); }}
-            className="flex items-center gap-1.5 text-zinc-400 hover:text-zinc-700 transition-colors"
+            className="flex items-center gap-1.5 transition-colors" style={{ color: "rgba(255,255,255,0.45)" }}
             data-testid="button-open-shortcuts"
           >
             <Settings className="w-3.5 h-3.5" />
@@ -1297,8 +1302,8 @@ export default function RecordingRoom() {
       </header>
 
       <div className="flex-1 flex overflow-hidden">
-        <div className="flex flex-col border-r border-zinc-200/80" style={{ width: "56%" }}>
-          <div className="flex-1 bg-zinc-900 relative overflow-hidden rounded-none">
+        <div className="flex flex-col" style={{ width: "56%", borderRight: "1px solid rgba(255,255,255,0.08)" }}>
+          <div className="flex-1 relative overflow-hidden" style={{ background: "rgba(0,0,0,0.4)", border: "1px solid rgba(255,255,255,0.06)", margin: "4px 4px 0 4px", borderRadius: "12px" }}>
             {production?.videoUrl ? (
               <video
                 ref={videoRef}
@@ -1309,8 +1314,8 @@ export default function RecordingRoom() {
                 muted={isMuted}
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center gap-3 text-zinc-500">
-                <div className="w-16 h-16 rounded-2xl bg-zinc-800 flex items-center justify-center">
+              <div className="w-full h-full flex flex-col items-center justify-center gap-3" style={{ color: "rgba(255,255,255,0.35)" }}>
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: "rgba(255,255,255,0.06)" }}>
                   <Play className="w-7 h-7" />
                 </div>
                 <p className="text-xs">Nenhum video anexado a esta producao</p>
@@ -1343,10 +1348,10 @@ export default function RecordingRoom() {
           </div>
 
           {videoDuration > 0 && (
-            <div className="px-5 py-2 bg-white border-t border-zinc-200/80">
-              <div className="flex items-center gap-3 text-[10px] font-mono text-zinc-400">
+            <div className="px-5 py-2" style={{ background: "rgba(255,255,255,0.03)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
+              <div className="flex items-center gap-3 text-[10px] font-mono" style={{ color: "rgba(255,255,255,0.45)" }}>
                 <span>{formatTimecode(videoTime)}</span>
-                <div className="flex-1 relative h-1.5 rounded-full bg-zinc-200 cursor-pointer group" onClick={(e) => {
+                <div className="flex-1 relative h-1.5 rounded-full cursor-pointer group" style={{ background: "rgba(255,255,255,0.10)" }} onClick={(e) => {
                   const rect = e.currentTarget.getBoundingClientRect();
                   scrub((e.clientX - rect.left) / rect.width);
                 }}>
@@ -1356,17 +1361,18 @@ export default function RecordingRoom() {
                       className={`absolute top-0 bottom-0 rounded-sm transition-all ${
                         savedTakes.has(i) ? "bg-emerald-400/70" :
                         i === currentLine ? "bg-blue-400/70" :
-                        "bg-zinc-300"
+                        ""
                       }`}
                       style={{
                         left: `${(line.start / videoDuration) * 100}%`,
                         width: `${Math.max(0.5, ((line.end! - line.start) / videoDuration) * 100)}%`,
+                        ...(!savedTakes.has(i) && i !== currentLine ? { background: "rgba(255,255,255,0.15)" } : {}),
                       }}
                     />
                   ))}
                   <div
-                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full bg-blue-600 shadow-md border-2 border-white"
-                    style={{ left: `${(videoTime / videoDuration) * 100}%`, transform: "translate(-50%,-50%)" }}
+                    className="absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-md"
+                    style={{ left: `${(videoTime / videoDuration) * 100}%`, transform: "translate(-50%,-50%)", background: "hsl(220 100% 55%)", border: "2px solid rgba(255,255,255,0.80)", boxShadow: "0 0 8px rgba(59,130,246,0.4)" }}
                   />
                 </div>
                 <span>{formatTimecode(videoDuration)}</span>
@@ -1374,9 +1380,9 @@ export default function RecordingRoom() {
             </div>
           )}
 
-          <div className="h-24 shrink-0 bg-white border-t border-zinc-200/80 px-5 flex items-center justify-between">
+          <div className="h-24 shrink-0 px-5 flex items-center justify-between" style={{ background: "rgba(255,255,255,0.03)", backdropFilter: "blur(12px)", WebkitBackdropFilter: "blur(12px)", borderTop: "1px solid rgba(255,255,255,0.06)" }}>
             <div className="w-56 shrink-0 flex flex-col justify-center gap-1 h-full py-3">
-              <div className="flex items-center justify-between text-[10px] text-zinc-400 mb-0.5">
+              <div className="flex items-center justify-between text-[10px] mb-0.5" style={{ color: "rgba(255,255,255,0.45)" }}>
                 <span className="uppercase tracking-wider">
                   {recordingStatus === "recording" ? "Ao Vivo" :
                     recordingStatus === "previewing" ? "Reproduzindo" :
@@ -1384,22 +1390,22 @@ export default function RecordingRoom() {
                     micReady ? "Monitorando" : "Sem microfone"}
                 </span>
                 {recordingStatus === "recording" && (
-                  <span className="flex items-center gap-1 text-red-500">
+                  <span className="flex items-center gap-1" style={{ color: "hsl(0 72% 65%)" }}>
                     <Circle className="w-1.5 h-1.5 fill-red-500 animate-pulse" /> REC
                   </span>
                 )}
                 {(recordingStatus === "recorded" || recordingStatus === "previewing") && lastRecording && (
                   <div className="flex items-center gap-2">
                     {qualityMetrics && (
-                      <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
-                        qualityMetrics.score > 80 ? "bg-emerald-50 text-emerald-700 border border-emerald-200" :
-                        qualityMetrics.score > 50 ? "bg-amber-50 text-amber-700 border border-amber-200" :
-                        "bg-red-50 text-red-700 border border-red-200"
-                      }`}>
+                      <span className="text-[10px] font-bold px-1.5 py-0.5 rounded" style={
+                        qualityMetrics.score > 80 ? { background: "rgba(16,185,129,0.12)", color: "hsl(160 84% 60%)", border: "1px solid rgba(16,185,129,0.25)" } :
+                        qualityMetrics.score > 50 ? { background: "rgba(245,158,11,0.12)", color: "hsl(45 93% 55%)", border: "1px solid rgba(245,158,11,0.25)" } :
+                        { background: "rgba(239,68,68,0.12)", color: "hsl(0 72% 65%)", border: "1px solid rgba(239,68,68,0.25)" }
+                      }>
                         {qualityMetrics.score}
                       </span>
                     )}
-                    <span className="text-amber-600 font-mono">{lastRecording.durationSeconds.toFixed(1)}s</span>
+                    <span className="font-mono" style={{ color: "hsl(45 93% 55%)" }}>{lastRecording.durationSeconds.toFixed(1)}s</span>
                   </div>
                 )}
               </div>
@@ -1415,7 +1421,7 @@ export default function RecordingRoom() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => seek(-2)}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-all"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all" style={{ color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.05)" }}
                 data-testid="button-back-2s"
                 title={`Back 2s (${keyLabel(shortcuts.back)})`}
               >
@@ -1424,7 +1430,7 @@ export default function RecordingRoom() {
 
               <button
                 onClick={handlePlayPause}
-                className="w-11 h-11 rounded-full flex items-center justify-center bg-zinc-100 hover:bg-zinc-200 text-zinc-900 transition-all shadow-sm"
+                className="w-11 h-11 rounded-full flex items-center justify-center transition-all" style={{ background: "rgba(255,255,255,0.08)", color: "hsl(210 40% 96%)", boxShadow: "0 2px 8px rgba(0,0,0,0.3)" }}
                 data-testid="button-play-pause"
                 title={`Play/Pause (${keyLabel(shortcuts.playPause)})`}
               >
@@ -1433,33 +1439,34 @@ export default function RecordingRoom() {
 
               <button
                 onClick={recordingStatus === "recording" ? handleStopRecording : handleStopPlayback}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-all"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all" style={{ color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.05)" }}
                 data-testid="button-stop"
                 title={`Stop (${keyLabel(shortcuts.stop)})`}
               >
                 <Square className="w-4 h-4" />
               </button>
 
-              <div className="w-px h-8 bg-zinc-200 mx-1" />
+              <div className="w-px h-8 mx-1" style={{ background: "rgba(255,255,255,0.10)" }} />
 
               {recordingStatus === "idle" || recordingStatus === "countdown" ? (
                 <button
                   onClick={startCountdown}
                   disabled={!micReady || recordingStatus === "countdown"}
-                  className={`w-14 h-14 rounded-full flex items-center justify-center transition-all shadow-sm ${
-                    recordingStatus === "countdown"
-                      ? "bg-amber-100 border border-amber-300 cursor-wait"
-                      : "bg-zinc-100 hover:bg-red-50 hover:border-red-300 border border-zinc-200 disabled:opacity-30"
-                  }`}
+                  className="w-14 h-14 rounded-full flex items-center justify-center transition-all disabled:opacity-30"
+                  style={recordingStatus === "countdown"
+                    ? { background: "rgba(245,158,11,0.15)", border: "1px solid rgba(245,158,11,0.30)", cursor: "wait", color: "rgba(255,255,255,0.70)" }
+                    : { background: "rgba(255,255,255,0.06)", border: "1px solid rgba(255,255,255,0.12)", color: "rgba(255,255,255,0.70)" }
+                  }
                   data-testid="button-record"
                   title={`Record (${keyLabel(shortcuts.record)})`}
                 >
-                  <Mic className="w-5 h-5 text-zinc-700" />
+                  <Mic className="w-5 h-5" />
                 </button>
               ) : recordingStatus === "recording" ? (
                 <button
                   onClick={handleStopRecording}
-                  className="w-14 h-14 rounded-full flex items-center justify-center bg-red-500 hover:bg-red-400 shadow-lg shadow-red-500/20 transition-all"
+                  className="w-14 h-14 rounded-full flex items-center justify-center transition-all"
+                  style={{ background: "hsl(0 72% 55%)", boxShadow: "0 0 24px rgba(239,68,68,0.4), 0 4px 12px rgba(0,0,0,0.3)" }}
                   data-testid="button-stop-recording"
                   title={`Stop recording (${keyLabel(shortcuts.stop)})`}
                 >
@@ -1469,9 +1476,11 @@ export default function RecordingRoom() {
                 <div className="flex items-center gap-2">
                   <button
                     onClick={handlePreview}
-                    className={`w-11 h-11 rounded-full flex items-center justify-center transition-all shadow-sm ${
-                      recordingStatus === "previewing" ? "bg-blue-600 hover:bg-blue-500 text-white" : "bg-zinc-100 hover:bg-blue-50 text-zinc-700 border border-zinc-200"
-                    }`}
+                    className="w-11 h-11 rounded-full flex items-center justify-center transition-all"
+                    style={recordingStatus === "previewing"
+                      ? { background: "hsl(220 100% 55%)", color: "white", boxShadow: "0 0 16px rgba(59,130,246,0.3)" }
+                      : { background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.70)", border: "1px solid rgba(255,255,255,0.12)" }
+                    }
                     data-testid="button-preview"
                   >
                     <Headphones className="w-4 h-4" />
@@ -1479,14 +1488,16 @@ export default function RecordingRoom() {
                   <button
                     onClick={handleSaveTake}
                     disabled={isSaving}
-                    className="w-11 h-11 rounded-full flex items-center justify-center bg-emerald-500 hover:bg-emerald-400 text-white transition-all shadow-sm disabled:opacity-50"
+                    className="w-11 h-11 rounded-full flex items-center justify-center text-white transition-all disabled:opacity-50"
+                    style={{ background: "hsl(160 84% 39%)", boxShadow: "0 0 16px rgba(16,185,129,0.3)" }}
                     data-testid="button-save-take"
                   >
                     <Save className="w-4 h-4" />
                   </button>
                   <button
                     onClick={handleDiscard}
-                    className="w-9 h-9 rounded-xl flex items-center justify-center bg-zinc-100 hover:bg-red-50 text-zinc-400 hover:text-red-500 border border-zinc-200 transition-all"
+                    className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+                    style={{ background: "rgba(239,68,68,0.08)", color: "rgba(239,68,68,0.60)", border: "1px solid rgba(239,68,68,0.15)" }}
                     data-testid="button-discard-take"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -1494,11 +1505,11 @@ export default function RecordingRoom() {
                 </div>
               )}
 
-              <div className="w-px h-8 bg-zinc-200 mx-1" />
+              <div className="w-px h-8 mx-1" style={{ background: "rgba(255,255,255,0.10)" }} />
 
               <button
                 onClick={() => seek(2)}
-                className="w-9 h-9 rounded-xl flex items-center justify-center text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100 transition-all"
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all" style={{ color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.05)" }}
                 data-testid="button-forward-2s"
                 title={`Forward 2s (${keyLabel(shortcuts.forward)})`}
               >
@@ -1507,11 +1518,11 @@ export default function RecordingRoom() {
 
               <button
                 onClick={() => setIsLooping((l) => !l)}
-                className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all ${
-                  isLooping
-                    ? "bg-blue-50 text-blue-600 ring-1 ring-blue-200"
-                    : "text-zinc-400 hover:text-zinc-900 hover:bg-zinc-100"
-                }`}
+                className="w-9 h-9 rounded-xl flex items-center justify-center transition-all"
+                style={isLooping
+                  ? { background: "rgba(59,130,246,0.12)", color: "hsl(220 100% 65%)", boxShadow: "0 0 0 1px rgba(59,130,246,0.30)" }
+                  : { color: "rgba(255,255,255,0.45)", background: "rgba(255,255,255,0.05)" }
+                }
                 data-testid="button-loop"
                 title={`Toggle loop (${keyLabel(shortcuts.loop)})`}
               >
@@ -1522,16 +1533,18 @@ export default function RecordingRoom() {
             <div className="w-44 shrink-0 flex flex-col items-end gap-1.5">
               {isLooping && (
                 <div className="flex flex-col items-end gap-1">
-                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
+                  <div className="flex items-center gap-1.5 text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
                     <span>Pre-roll</span>
                     <div className="flex gap-0.5">
                       {[0.5, 1, 2, 3].map((v) => (
                         <button
                           key={v}
                           onClick={() => setPreRoll(v)}
-                          className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
-                            preRoll === v ? "bg-blue-100 text-blue-700 border border-blue-200" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700"
-                          }`}
+                          className="px-1.5 py-0.5 rounded text-[10px] transition-colors"
+                          style={preRoll === v
+                            ? { background: "rgba(59,130,246,0.12)", color: "hsl(220 100% 65%)", border: "1px solid rgba(59,130,246,0.25)" }
+                            : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.50)" }
+                          }
                           data-testid={`preroll-${v}`}
                         >
                           {v}s
@@ -1539,16 +1552,18 @@ export default function RecordingRoom() {
                       ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-zinc-400">
+                  <div className="flex items-center gap-1.5 text-[10px]" style={{ color: "rgba(255,255,255,0.45)" }}>
                     <span>Post-roll</span>
                     <div className="flex gap-0.5">
                       {[0.5, 1, 2, 3].map((v) => (
                         <button
                           key={v}
                           onClick={() => setPostRoll(v)}
-                          className={`px-1.5 py-0.5 rounded text-[10px] transition-colors ${
-                            postRoll === v ? "bg-blue-100 text-blue-700 border border-blue-200" : "bg-zinc-100 text-zinc-500 hover:text-zinc-700"
-                          }`}
+                          className="px-1.5 py-0.5 rounded text-[10px] transition-colors"
+                          style={postRoll === v
+                            ? { background: "rgba(59,130,246,0.12)", color: "hsl(220 100% 65%)", border: "1px solid rgba(59,130,246,0.25)" }
+                            : { background: "rgba(255,255,255,0.05)", color: "rgba(255,255,255,0.50)" }
+                          }
                           data-testid={`postroll-${v}`}
                         >
                           {v}s
@@ -1558,20 +1573,20 @@ export default function RecordingRoom() {
                   </div>
                 </div>
               )}
-              <p className="text-[10px] text-zinc-400">
+              <p className="text-[10px]" style={{ color: "rgba(255,255,255,0.40)" }}>
                 {savedTakes.size} / {scriptLines.length} linhas salvas
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex flex-col bg-white" style={{ width: "44%" }}>
-          <div className="h-11 shrink-0 px-5 flex items-center justify-between border-b border-zinc-200/80 bg-zinc-50/50">
-            <span className="text-[11px] font-semibold text-zinc-400 uppercase tracking-widest">
+        <div className="flex flex-col" style={{ width: "44%", background: "rgba(255,255,255,0.02)" }}>
+          <div className="h-11 shrink-0 px-5 flex items-center justify-between" style={{ borderBottom: "1px solid rgba(255,255,255,0.06)", background: "rgba(255,255,255,0.03)" }}>
+            <span className="text-[11px] font-semibold uppercase tracking-widest" style={{ color: "rgba(255,255,255,0.40)" }}>
               Roteiro
             </span>
-            <span className="text-xs text-zinc-400">
-              <span className="text-zinc-700 font-mono">{currentLine + 1}</span>
+            <span className="text-xs" style={{ color: "rgba(255,255,255,0.40)" }}>
+              <span className="font-mono" style={{ color: "rgba(255,255,255,0.75)" }}>{currentLine + 1}</span>
               {" "}/{" "}
               {scriptLines.length}
             </span>
@@ -1579,13 +1594,13 @@ export default function RecordingRoom() {
 
           <div className="flex-1 overflow-y-auto py-3 px-4 min-h-0" style={{ scrollBehavior: "smooth" }}>
             {scriptLines.length === 0 && !session && (
-              <div className="flex flex-col items-center justify-center h-full gap-3 text-zinc-400">
-                <div className="w-10 h-10 rounded-full border-2 border-zinc-200 border-t-blue-500 animate-spin" />
+              <div className="flex flex-col items-center justify-center h-full gap-3" style={{ color: "rgba(255,255,255,0.40)" }}>
+                <div className="w-10 h-10 rounded-full animate-spin" style={{ border: "2px solid rgba(255,255,255,0.10)", borderTopColor: "hsl(220 100% 55%)" }} />
                 <p className="text-sm">Carregando sessao...</p>
               </div>
             )}
             {scriptLines.length === 0 && session && (
-              <div className="flex flex-col items-center justify-center h-full gap-2 text-zinc-400">
+              <div className="flex flex-col items-center justify-center h-full gap-2" style={{ color: "rgba(255,255,255,0.40)" }}>
                 <p className="text-sm">Nenhum roteiro carregado</p>
                 <p className="text-xs">Adicione um roteiro a producao para ver as falas aqui</p>
               </div>
@@ -1605,39 +1620,38 @@ export default function RecordingRoom() {
                       emitVideoEvent("video-seek", { currentTime: line.start, lineIndex: i });
                     }
                   }}
-                  className={`mb-3 px-5 py-4 lg:px-6 lg:py-5 rounded-xl cursor-pointer transition-all duration-300 ${
-                    isActive ? "ring-1 ring-blue-300/50 shadow-sm" : ""
-                  }`}
+                  className="mb-3 px-5 py-4 lg:px-6 lg:py-5 rounded-xl cursor-pointer transition-all duration-300"
                   style={{
-                    background: isActive ? "rgba(0, 113, 227, 0.06)" : "transparent",
+                    background: isActive ? "rgba(59, 130, 246, 0.08)" : "transparent",
+                    ...(isActive ? { boxShadow: "0 0 0 1px rgba(59,130,246,0.25), 0 0 12px rgba(59,130,246,0.08)" } : {}),
                   }}
                   data-testid={`script-line-${i}`}
                 >
                   <div className="flex items-center gap-3 mb-2 lg:mb-3">
-                    <span className="text-[16px] lg:text-[16px] font-mono text-zinc-400 tabular-nums">
+                    <span className="text-[16px] lg:text-[16px] font-mono tabular-nums" style={{ color: "rgba(255,255,255,0.40)" }}>
                       {formatTimecode(line.start)}
                     </span>
                     <span
-                      className={`text-[24px] lg:text-[32px] font-extrabold uppercase tracking-[0.5px] transition-colors leading-tight ${
-                        isActive ? "text-blue-600" : "text-zinc-400"
-                      }`}
+                      className="text-[24px] lg:text-[32px] font-extrabold uppercase tracking-[0.5px] transition-colors leading-tight"
+                      style={{ color: isActive ? "hsl(220 100% 65%)" : "rgba(255,255,255,0.35)" }}
                     >
                       {line.character}
                     </span>
                     {isDone && (
-                      <span className="ml-auto flex items-center gap-1.5 text-[16px] text-emerald-600 font-medium">
+                      <span className="ml-auto flex items-center gap-1.5 text-[16px] font-medium" style={{ color: "hsl(160 84% 60%)" }}>
                         <CheckCircle2 className="w-5 h-5" /> Salvo
                       </span>
                     )}
                     {lineTakes.length > 0 && !isDone && (
-                      <span className="ml-auto text-[16px] text-zinc-400">
+                      <span className="ml-auto text-[16px]" style={{ color: "rgba(255,255,255,0.40)" }}>
                         {lineTakes.length} take{lineTakes.length > 1 ? "s" : ""}
                       </span>
                     )}
                   </div>
-                  <p className={`text-[22px] lg:text-[30px] leading-[1.7] transition-colors ${
-                    isActive ? "text-zinc-900 font-medium" : "text-zinc-500"
-                  }`}>
+                  <p className="text-[22px] lg:text-[30px] leading-[1.7] transition-colors" style={{
+                    color: isActive ? "hsl(210 40% 96%)" : "rgba(255,255,255,0.45)",
+                    fontWeight: isActive ? 500 : 400,
+                  }}>
                     {line.text}
                   </p>
                 </div>

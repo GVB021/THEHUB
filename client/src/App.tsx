@@ -19,6 +19,7 @@ const Staff = lazy(() => import("@/pages/staff"));
 const Admin = lazy(() => import("@/pages/admin"));
 const Notifications = lazy(() => import("@/pages/notifications"));
 const Members = lazy(() => import("@/pages/members"));
+const StudioAdmin = lazy(() => import("@/pages/studio-admin"));
 
 import { StudioLayout } from "@/components/layout/studio-layout";
 
@@ -108,6 +109,9 @@ function Router() {
         </Route>
         <Route path="/studio/:studioId/notifications">
           {params => <ProtectedRoute component={Notifications} requireStudio params={params} />}
+        </Route>
+        <Route path="/studio/:studioId/admin">
+          {params => <ProtectedRoute component={StudioAdmin} requireStudio params={params} />}
         </Route>
 
         <Route path="/studio/:studioId/sessions/:sessionId/room">

@@ -109,7 +109,9 @@ export interface IStorage {
   getAllTakes(): Promise<Take[]>;
   deleteTake(id: string): Promise<void>;
 
-  getSystemStats(): Promise<{ users: number; studios: number; productions: number; sessions: number; takes: number }>;
+  getSystemStats(): Promise<{ users: number; studios: number; productions: number; sessions: number; takes: number; pendingUsers: number }>;
+  getStudioAdmins(studioId: string): Promise<User[]>;
+  getPendingUsersWithStudioInfo(): Promise<any[]>;
 
   getStudioMemberships(studioId: string): Promise<(StudioMembership & { user?: User })[]>;
   getMembershipsByUser(userId: string): Promise<StudioMembership[]>;
@@ -128,6 +130,9 @@ export interface IStorage {
   removeUserStudioRole(membershipId: string, role: string): Promise<void>;
   setUserStudioRoles(membershipId: string, roles: string[]): Promise<UserStudioRole[]>;
   verifyUserStudioAccess(userId: string, studioId: string): Promise<boolean>;
+  getActiveStudiosPublic(): Promise<{ id: string; name: string }[]>;
+  getStudioStats(studioId: string): Promise<{ members: number; productions: number; sessions: number; takes: number; pendingMembers: number }>;
+  getPendingMembersForStudio(studioId: string): Promise<(StudioMembership & { user?: User })[]>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -375,19 +380,52 @@ export class DatabaseStorage implements IStorage {
     await db.delete(takes).where(eq(takes.id, id));
   }
 
-  async getSystemStats(): Promise<{ users: number; studios: number; productions: number; sessions: number; takes: number }> {
+  async getSystemStats(): Promise<{ users: number; studios: number; productions: number; sessions: number; takes: number; pendingUsers: number }> {
     const [userCount] = await db.select({ count: db.$count(users) }).from(users);
     const [studioCount] = await db.select({ count: db.$count(studios) }).from(studios);
     const [prodCount] = await db.select({ count: db.$count(productions) }).from(productions);
     const [sessCount] = await db.select({ count: db.$count(sessions) }).from(sessions);
     const [takesCount] = await db.select({ count: db.$count(takes) }).from(takes);
+    const allUsers = await db.select().from(users);
+    const pendingCount = allUsers.filter(u => u.status === "pending").length;
     return {
       users: Number(userCount?.count ?? 0),
       studios: Number(studioCount?.count ?? 0),
       productions: Number(prodCount?.count ?? 0),
       sessions: Number(sessCount?.count ?? 0),
       takes: Number(takesCount?.count ?? 0),
+      pendingUsers: pendingCount,
     };
+  }
+
+  async getStudioAdmins(studioId: string): Promise<User[]> {
+    const memberships = await db.select().from(studioMemberships)
+      .where(and(eq(studioMemberships.studioId, studioId), eq(studioMemberships.status, "approved")));
+    const adminUsers: User[] = [];
+    for (const m of memberships) {
+      const roles = await db.select({ role: userStudioRoles.role })
+        .from(userStudioRoles)
+        .where(eq(userStudioRoles.membershipId, m.id));
+      const isAdmin = roles.some(r => r.role === "studio_admin") || m.role === "studio_admin";
+      if (isAdmin) {
+        const [user] = await db.select().from(users).where(eq(users.id, m.userId));
+        if (user) adminUsers.push(user);
+      }
+    }
+    return adminUsers;
+  }
+
+  async getPendingUsersWithStudioInfo(): Promise<any[]> {
+    const pendingUsersList = await db.select().from(users).where(eq(users.status, "pending"));
+    const result = await Promise.all(pendingUsersList.map(async (u) => {
+      const memberships = await db.select().from(studioMemberships).where(eq(studioMemberships.userId, u.id));
+      const studioInfo = await Promise.all(memberships.map(async (m) => {
+        const [studio] = await db.select().from(studios).where(eq(studios.id, m.studioId));
+        return { membershipId: m.id, studioId: m.studioId, studioName: studio?.name || "Desconhecido", membershipStatus: m.status };
+      }));
+      return { ...u, studioMemberships: studioInfo };
+    }));
+    return result;
   }
 
   async getStudioMemberships(studioId: string): Promise<(StudioMembership & { user?: User })[]> {
@@ -505,6 +543,37 @@ export class DatabaseStorage implements IStorage {
         eq(studioMemberships.status, "approved")
       ));
     return !!membership;
+  }
+
+  async getActiveStudiosPublic(): Promise<{ id: string; name: string }[]> {
+    return await db.select({ id: studios.id, name: studios.name })
+      .from(studios)
+      .where(eq(studios.isActive, true));
+  }
+
+  async getStudioStats(studioId: string): Promise<{ members: number; productions: number; sessions: number; takes: number; pendingMembers: number }> {
+    const allMemberships = await db.select().from(studioMemberships).where(eq(studioMemberships.studioId, studioId));
+    const membersCount = allMemberships.filter(m => m.status === "approved").length;
+    const pendingCount = allMemberships.filter(m => m.status === "pending").length;
+    const prods = await db.select().from(productions).where(eq(productions.studioId, studioId));
+    const sess = await db.select().from(sessions).where(eq(sessions.studioId, studioId));
+    let takesCount = 0;
+    for (const s of sess) {
+      const t = await db.select().from(takes).where(eq(takes.sessionId, s.id));
+      takesCount += t.length;
+    }
+    return { members: membersCount, productions: prods.length, sessions: sess.length, takes: takesCount, pendingMembers: pendingCount };
+  }
+
+  async getPendingMembersForStudio(studioId: string): Promise<(StudioMembership & { user?: User })[]> {
+    const memberships = await db.select().from(studioMemberships)
+      .where(and(eq(studioMemberships.studioId, studioId), eq(studioMemberships.status, "pending")))
+      .orderBy(desc(studioMemberships.createdAt));
+    const result = await Promise.all(memberships.map(async (m) => {
+      const [user] = await db.select().from(users).where(eq(users.id, m.userId));
+      return { ...m, user };
+    }));
+    return result;
   }
 }
 

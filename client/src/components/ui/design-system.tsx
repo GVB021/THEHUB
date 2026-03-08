@@ -54,7 +54,7 @@ export function StatCard({ label, value, icon, valueClassName, className, descri
     <div className={cn("vhub-card p-5", className)}>
       <div className="flex items-start justify-between mb-3">
         <span className="vhub-label">{label}</span>
-        <div className="shrink-0">{icon}</div>
+        <div className="shrink-0 w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center">{icon}</div>
       </div>
       <div className={cn("text-2xl font-bold tracking-tight", valueClassName ?? "text-foreground")}>
         {value}
@@ -77,7 +77,7 @@ interface EmptyStateProps {
 export function EmptyState({ icon, title, description, action, className }: EmptyStateProps) {
   return (
     <div className={cn("vhub-card flex flex-col items-center justify-center py-16 px-8 text-center", className)}>
-      <div className="w-12 h-12 rounded-xl bg-muted flex items-center justify-center mb-4 text-muted-foreground/40">
+      <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-4 text-muted-foreground/40">
         {icon}
       </div>
       <h3 className="font-semibold text-foreground mb-1">{title}</h3>
@@ -138,16 +138,18 @@ const ROLE_LABEL: Record<string, string> = {
   engenheiro_audio: "Engenheiro de Audio",
   platform_owner:   "Dono da Plataforma",
   studio_admin:     "Admin Estudio",
+  aluno:            "Aluno",
 };
 const ROLE_CLASS: Record<string, string> = {
-  voice_actor:      "bg-violet-50 text-violet-700 border border-violet-200",
-  dublador:         "bg-violet-50 text-violet-700 border border-violet-200",
-  director:         "bg-blue-50 text-blue-700 border border-blue-200",
-  diretor:          "bg-blue-50 text-blue-700 border border-blue-200",
-  engineer:         "bg-amber-50 text-amber-700 border border-amber-200",
-  engenheiro_audio: "bg-amber-50 text-amber-700 border border-amber-200",
-  platform_owner:   "bg-rose-50 text-rose-700 border border-rose-200",
-  studio_admin:     "bg-primary/10 text-primary border border-primary/20",
+  voice_actor:      "bg-violet-500/12 text-violet-400 border border-violet-500/25",
+  dublador:         "bg-violet-500/12 text-violet-400 border border-violet-500/25",
+  director:         "bg-blue-500/12 text-blue-400 border border-blue-500/25",
+  diretor:          "bg-blue-500/12 text-blue-400 border border-blue-500/25",
+  engineer:         "bg-amber-500/12 text-amber-400 border border-amber-500/25",
+  engenheiro_audio: "bg-amber-500/12 text-amber-400 border border-amber-500/25",
+  platform_owner:   "bg-rose-500/12 text-rose-400 border border-rose-500/25",
+  studio_admin:     "bg-primary/12 text-primary border border-primary/25",
+  aluno:            "bg-cyan-500/12 text-cyan-400 border border-cyan-500/25",
 };
 interface RoleBadgeProps {
   role: string;

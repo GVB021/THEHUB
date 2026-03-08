@@ -3,6 +3,7 @@ import passport from "passport";
 import { z } from "zod";
 import { isAuthenticated, hashPassword } from "./replitAuth";
 import { authStorage } from "./storage";
+import { storage } from "../../storage";
 import { logger } from "../../lib/logger";
 
 const loginSchema = z.object({
@@ -27,6 +28,7 @@ const registerSchema = z.object({
   specialty: z.string().min(1, "Especialidade obrigatoria"),
   bio: z.string().min(1, "Bio obrigatoria"),
   portfolioUrl: z.string().optional().default(""),
+  studioId: z.string().min(1, "Selecione um estudio"),
 });
 
 async function seedPlatformOwner() {
@@ -92,12 +94,27 @@ export function registerAuthRoutes(app: Express): void {
     })(req, res, next);
   });
 
+  app.get("/api/auth/studios-public", async (_req, res) => {
+    try {
+      const activeStudios = await storage.getActiveStudiosPublic();
+      return res.json(activeStudios);
+    } catch (err) {
+      logger.error("Error fetching public studios", { error: String(err) });
+      return res.status(500).json({ message: "Erro ao buscar estudios" });
+    }
+  });
+
   app.post("/api/auth/register", async (req, res) => {
     try {
       const data = registerSchema.parse(req.body);
       const existing = await authStorage.getUserByEmail(data.email);
       if (existing) {
         return res.status(409).json({ message: "Este email ja esta em uso" });
+      }
+
+      const studio = await storage.getStudio(data.studioId);
+      if (!studio) {
+        return res.status(400).json({ message: "Estudio selecionado nao encontrado" });
       }
 
       const user = await authStorage.createUser({
@@ -122,7 +139,29 @@ export function registerAuthRoutes(app: Express): void {
         role: "user",
       });
 
-      logger.info("New user registered (pending)", { email: data.email, id: user.id });
+      await storage.createMembership({
+        userId: user.id,
+        studioId: data.studioId,
+        role: "pending",
+        status: "pending",
+      });
+
+      try {
+        const studioAdmins = await storage.getStudioAdmins(data.studioId);
+        for (const admin of studioAdmins) {
+          await storage.createNotification({
+            userId: admin.id,
+            type: "member_request",
+            title: "Novo cadastro pendente",
+            message: `${data.fullName} (${data.email}) solicitou acesso ao estudio ${studio.name}.`,
+            relatedId: user.id,
+          });
+        }
+      } catch (notifErr) {
+        logger.error("Error sending notifications to studio admins", { error: String(notifErr) });
+      }
+
+      logger.info("New user registered (pending)", { email: data.email, id: user.id, studioId: data.studioId });
       const { passwordHash, ...safeUser } = user;
       return res.status(201).json({ user: safeUser });
     } catch (err: any) {

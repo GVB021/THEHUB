@@ -186,7 +186,7 @@ export default function MonitorPanel({
   }, [micState, recordingStatus, lastRecording, savedSamples]);
 
   return (
-    <div className="flex items-center gap-1.5 h-full">
+    <div className="flex items-center gap-1.5 h-full rounded-lg p-1" style={{ background: "rgba(0,0,0,0.3)", border: "1px solid rgba(255,255,255,0.08)" }}>
       <canvas
         ref={waveCanvasRef}
         className="flex-1 h-12 rounded"

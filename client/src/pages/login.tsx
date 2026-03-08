@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Mic2, Loader2, ArrowRight, ArrowLeft, UserPlus } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Loader2, ArrowRight, ArrowLeft, UserPlus } from "lucide-react";
 import { useLocation } from "wouter";
 import { pt } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
@@ -19,8 +20,22 @@ export default function Login() {
     fullName: "", artistName: "", email: "", password: "",
     phone: "", altPhone: "", birthDate: "", city: "", state: "", country: "",
     mainLanguage: "", additionalLanguages: "", experience: "", specialty: "",
-    bio: "", portfolioUrl: "",
+    bio: "", portfolioUrl: "", studioId: "",
   });
+
+  const [publicStudios, setPublicStudios] = useState<{ id: string; name: string }[]>([]);
+  const [studiosLoading, setStudiosLoading] = useState(false);
+
+  useEffect(() => {
+    if (mode === "register" && publicStudios.length === 0) {
+      setStudiosLoading(true);
+      fetch("/api/auth/studios-public")
+        .then(res => res.json())
+        .then(data => setPublicStudios(Array.isArray(data) ? data : []))
+        .catch(() => setPublicStudios([]))
+        .finally(() => setStudiosLoading(false));
+    }
+  }, [mode]);
 
   if (user) {
     setLocation("/studios");
@@ -48,7 +63,7 @@ export default function Login() {
     e.preventDefault();
     if (!form.fullName || !form.email || !form.password || !form.phone ||
         !form.city || !form.state || !form.country ||
-        !form.mainLanguage || !form.experience || !form.specialty || !form.bio) {
+        !form.mainLanguage || !form.experience || !form.specialty || !form.bio || !form.studioId) {
       toast({ title: "Erro", description: "Preencha todos os campos obrigatorios.", variant: "destructive" });
       return;
     }
@@ -73,8 +88,8 @@ export default function Login() {
           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[500px] bg-primary/5 blur-[120px] rounded-full" />
         </div>
         <div className="w-full max-w-sm relative page-enter text-center">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-amber-100 ring-1 ring-amber-200 flex items-center justify-center mb-6">
-            <Loader2 className="w-6 h-6 text-amber-600" />
+          <div className="mx-auto w-12 h-12 flex items-center justify-center mb-6">
+            <img src="/logo.svg" alt="V.HUB" className="w-12 h-12" data-testid="img-logo-pending" />
           </div>
           <h1 className="vhub-page-title text-foreground mb-2" data-testid="text-pending-title">{pt.status.pending}</h1>
           <p className="vhub-body text-muted-foreground mb-8" data-testid="text-pending-message">
@@ -101,8 +116,8 @@ export default function Login() {
         </div>
         <div className="w-full max-w-2xl mx-auto relative page-enter py-8">
           <div className="text-center mb-8">
-            <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 ring-1 ring-primary/20 flex items-center justify-center mb-6">
-              <UserPlus className="w-6 h-6 text-primary" />
+            <div className="mx-auto w-14 h-14 flex items-center justify-center mb-6">
+              <img src="/logo.svg" alt="V.HUB" className="w-14 h-14" data-testid="img-logo-register" />
             </div>
             <h1 className="vhub-page-title text-foreground mb-2" data-testid="text-register-title">{pt.register.title}</h1>
             <p className="vhub-page-subtitle !mt-0">{pt.register.subtitle}</p>
@@ -127,6 +142,27 @@ export default function Login() {
                 <div className="vhub-field">
                   <label className="vhub-field-label">{pt.auth.password} *</label>
                   <Input type="password" value={form.password} onChange={e => updateForm("password", e.target.value)} className="h-11 bg-card border-border/60" required data-testid="input-reg-password" />
+                </div>
+                <div className="vhub-field md:col-span-2">
+                  <label className="vhub-field-label">{pt.register.studio} *</label>
+                  <Select value={form.studioId} onValueChange={(value) => updateForm("studioId", value)}>
+                    <SelectTrigger className="h-11 bg-card border-border/60" data-testid="select-studio">
+                      <SelectValue placeholder={pt.register.studioPlaceholder} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {studiosLoading ? (
+                        <SelectItem value="__loading" disabled>{pt.common.loading}</SelectItem>
+                      ) : publicStudios.length === 0 ? (
+                        <SelectItem value="__empty" disabled>{pt.register.noStudiosAvailable}</SelectItem>
+                      ) : (
+                        publicStudios.map((s) => (
+                          <SelectItem key={s.id} value={s.id} data-testid={`select-studio-option-${s.id}`}>
+                            {s.name}
+                          </SelectItem>
+                        ))
+                      )}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div className="vhub-field">
                   <label className="vhub-field-label">{pt.register.phone} *</label>
@@ -234,8 +270,8 @@ export default function Login() {
 
       <div className="w-full max-w-sm relative page-enter">
         <div className="text-center mb-10">
-          <div className="mx-auto w-12 h-12 rounded-2xl bg-primary/10 ring-1 ring-primary/20 flex items-center justify-center mb-6">
-            <Mic2 className="w-6 h-6 text-primary" />
+          <div className="mx-auto w-14 h-14 flex items-center justify-center mb-6">
+            <img src="/logo.svg" alt="V.HUB" className="w-14 h-14" data-testid="img-logo-login" />
           </div>
           <h1 className="vhub-page-title text-foreground mb-2" data-testid="text-welcome">{pt.auth.welcomeBack}</h1>
           <p className="vhub-page-subtitle !mt-0">{pt.auth.signInSubtitle}</p>

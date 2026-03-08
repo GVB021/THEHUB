@@ -34,6 +34,9 @@ export const pt = {
     bio: "Mini biografia",
     portfolioUrl: "Link de portfolio (opcional)",
     profilePhoto: "Foto de perfil",
+    studio: "Estudio",
+    studioPlaceholder: "Selecione o estudio",
+    noStudiosAvailable: "Nenhum estudio disponivel",
     submit: "Criar Conta",
     backToLogin: "Voltar para login",
   },
@@ -173,6 +176,7 @@ export const pt = {
     user: "Usuario",
     pending: "Pendente",
     admin: "Administrador",
+    aluno: "Aluno",
   },
   status: {
     pending: "Pendente",

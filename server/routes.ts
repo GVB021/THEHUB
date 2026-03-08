@@ -167,7 +167,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
 
   app.post("/api/studios/:studioId/members/:membershipId/approve", requireAuth, requireStudioRole("studio_admin"), async (req, res) => {
     try {
-      const validRoles = z.enum(["studio_admin", "diretor", "dublador", "engenheiro_audio"]);
+      const validRoles = z.enum(["studio_admin", "diretor", "dublador", "engenheiro_audio", "aluno"]);
       const body = z.object({
         role: validRoles.optional(),
         roles: z.array(validRoles).optional(),
@@ -180,6 +180,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
       const updated = await storage.updateMembershipStatus(req.params.membershipId, "approved", roles[0]);
       await storage.setUserStudioRoles(req.params.membershipId, roles);
+      await storage.updateUserStatus(membership.userId, "approved");
       await storage.createNotification({
         userId: membership.userId,
         type: "membership_approved",
@@ -200,6 +201,7 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       return res.status(404).json({ message: "Membro nao encontrado" });
     }
     const updated = await storage.updateMembershipStatus(req.params.membershipId, "rejected");
+    await storage.updateUserStatus(membership.userId, "rejected");
     await storage.createNotification({
       userId: membership.userId,
       type: "membership_rejected",
@@ -236,6 +238,26 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       }
     }
     res.status(201).json(membership);
+  });
+
+  // STUDIO STATS
+  app.get("/api/studios/:studioId/stats", requireAuth, requireStudioAccess, async (req, res) => {
+    try {
+      const stats = await storage.getStudioStats(req.params.studioId);
+      res.status(200).json(stats);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao buscar stats" });
+    }
+  });
+
+  // STUDIO PENDING MEMBERS
+  app.get("/api/studios/:studioId/pending-members", requireAuth, requireStudioRole("studio_admin"), async (req, res) => {
+    try {
+      const pending = await storage.getPendingMembersForStudio(req.params.studioId);
+      res.status(200).json(pending);
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao buscar membros pendentes" });
+    }
   });
 
   // PRODUCTIONS
@@ -475,12 +497,77 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.status(200).json(allUsers);
   });
 
+  app.post("/api/admin/users", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { email, password, displayName, role } = z.object({
+        email: z.string().email(),
+        password: z.string().min(4),
+        displayName: z.string().optional(),
+        role: z.string().optional(),
+      }).parse(req.body);
+      const { hashPassword } = await import("./replit_integrations/auth/replitAuth");
+      const { authStorage } = await import("./replit_integrations/auth/storage");
+      const existing = await authStorage.getUserByEmail(email);
+      if (existing) return res.status(409).json({ message: "Email ja em uso" });
+      const user = await authStorage.createUser({
+        email: email.toLowerCase().trim(),
+        passwordHash: hashPassword(password),
+        displayName: displayName || email,
+        fullName: displayName || email,
+        role: role || "user",
+        status: "approved",
+      });
+      await logAdminAction(req, "CREATE_USER", `Criou usuario ${email}`);
+      const { passwordHash, ...safeUser } = user;
+      res.status(201).json(safeUser);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Dados invalidos" });
+    }
+  });
+
+  app.get("/api/admin/pending-users", requireAuth, requireAdmin, async (req, res) => {
+    const pendingUsers = await storage.getPendingUsersWithStudioInfo();
+    res.status(200).json(pendingUsers);
+  });
+
   app.post("/api/admin/users/:id/approve", requireAuth, requireAdmin, async (req, res) => {
     try {
-      const { role } = z.object({ role: z.string().optional() }).parse(req.body);
+      const { role, studioId, studioRoles } = z.object({
+        role: z.string().optional(),
+        studioId: z.string().optional(),
+        studioRoles: z.array(z.string()).optional(),
+      }).parse(req.body);
       const user = await storage.updateUserStatus(req.params.id, "approved");
       if (role) await storage.updateUser(req.params.id, { role });
-      await logAdminAction(req, "APPROVE_USER", `Aprovou usuario ${req.params.id}`);
+      if (studioId) {
+        const existingMemberships = await storage.getMembershipsByUser(req.params.id);
+        const existingMembership = existingMemberships.find(m => m.studioId === studioId);
+        let membershipId: string;
+        if (existingMembership) {
+          await storage.updateMembershipStatus(existingMembership.id, "approved", studioRoles?.[0] || "dublador");
+          membershipId = existingMembership.id;
+        } else {
+          const newMembership = await storage.createMembership({
+            userId: req.params.id,
+            studioId,
+            role: studioRoles?.[0] || "dublador",
+            status: "approved",
+          });
+          membershipId = newMembership.id;
+        }
+        if (studioRoles && studioRoles.length > 0) {
+          await storage.setUserStudioRoles(membershipId, studioRoles);
+        }
+        await storage.createNotification({
+          userId: req.params.id,
+          type: "membership_approved",
+          title: "Conta aprovada",
+          message: `Sua conta foi aprovada e voce foi atribuido ao estudio.`,
+          isRead: false,
+          relatedId: studioId,
+        });
+      }
+      await logAdminAction(req, "APPROVE_USER", `Aprovou usuario ${req.params.id}${studioId ? ` com estudio ${studioId}` : ""}`);
       res.status(200).json(user);
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Erro" });
@@ -494,6 +581,42 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(200).json(user);
     } catch (err: any) {
       res.status(400).json({ message: err.message || "Erro" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/change-role", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { role } = z.object({ role: z.string() }).parse(req.body);
+      const user = await storage.updateUser(req.params.id, { role });
+      await logAdminAction(req, "CHANGE_ROLE", `Alterou papel do usuario ${req.params.id} para ${role}`);
+      res.status(200).json(user);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Erro" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/change-status", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { status } = z.object({ status: z.string() }).parse(req.body);
+      const user = await storage.updateUserStatus(req.params.id, status);
+      await logAdminAction(req, "CHANGE_STATUS", `Alterou status do usuario ${req.params.id} para ${status}`);
+      res.status(200).json(user);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Erro" });
+    }
+  });
+
+  app.post("/api/admin/users/:id/reset-password", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { password } = z.object({ password: z.string().min(4) }).parse(req.body);
+      const { hashPassword } = await import("./replit_integrations/auth/replitAuth");
+      const passwordHash = hashPassword(password);
+      const { authStorage } = await import("./replit_integrations/auth/storage");
+      await authStorage.updateUserPassword(req.params.id, passwordHash);
+      await logAdminAction(req, "RESET_PASSWORD", `Redefiniu senha do usuario ${req.params.id}`);
+      res.status(200).json({ ok: true });
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Erro ao redefinir senha" });
     }
   });
 
@@ -583,6 +706,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(200).json({ ok: true });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Falha ao excluir sessao" });
+    }
+  });
+
+  // ADMIN TAKES
+  app.get("/api/admin/takes", requireAuth, requireAdmin, async (req, res) => {
+    const allTakes = await storage.getAllTakes();
+    res.status(200).json(allTakes);
+  });
+
+  app.delete("/api/admin/takes/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      await storage.deleteTake(req.params.id);
+      await logAdminAction(req, "DELETE_TAKE", `Excluiu take ${req.params.id}`);
+      res.status(200).json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Falha ao excluir take" });
     }
   });
 
