@@ -221,6 +221,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     res.status(200).json(updated);
   });
 
+  // MEMBERS - UPDATE ROLES
+  app.put("/api/studios/:studioId/members/:membershipId/roles", requireAuth, requireStudioRole("studio_admin"), async (req, res) => {
+    try {
+      const { roles } = req.body;
+      if (!Array.isArray(roles) || roles.length === 0) {
+        return res.status(400).json({ message: "Papeis invalidos" });
+      }
+      const membership = await storage.getMembership(req.params.membershipId);
+      if (!membership || membership.studioId !== req.params.studioId) {
+        return res.status(404).json({ message: "Membro nao encontrado" });
+      }
+      await storage.setUserStudioRoles(req.params.membershipId, roles);
+      await storage.updateMembershipStatus(req.params.membershipId, "approved", roles[0]);
+      res.status(200).json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao atualizar papeis" });
+    }
+  });
+
   app.post("/api/studios/:studioId/join", requireAuth, async (req, res) => {
     const user = (req as any).user!;
     const existing = await storage.getMembershipsByUser(user.id);
@@ -641,6 +660,48 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       await archive.finalize();
     } catch (err: any) {
       if (!res.headersSent) res.status(500).json({ message: err?.message || "Erro ao gerar ZIP" });
+    }
+  });
+
+  // PRODUCTION EXPORT (ZIP with script + characters + info)
+  app.get("/api/productions/:id/export", requireAuth, async (req, res) => {
+    try {
+      const production = await storage.getProduction(req.params.id);
+      if (!production) return res.status(404).json({ message: "Producao nao encontrada" });
+      const user = (req as any).user!;
+      if (user.role !== "platform_owner") {
+        const roles = await storage.getUserRolesInStudio(user.id, production.studioId);
+        if (!roles || roles.length === 0) {
+          return res.status(403).json({ message: "Acesso negado" });
+        }
+      }
+      const characters = await storage.getCharacters(req.params.id);
+      const info = {
+        id: production.id,
+        name: production.name,
+        description: production.description,
+        status: production.status,
+        videoUrl: production.videoUrl,
+      };
+      let scriptData: any[] = [];
+      if (production.scriptJson) {
+        try {
+          const parsed = JSON.parse(production.scriptJson);
+          scriptData = parsed.lines || (Array.isArray(parsed) ? parsed : []);
+        } catch { scriptData = []; }
+      }
+      const archiver = (await import("archiver")).default;
+      const archive = archiver("zip", { zlib: { level: 5 } });
+      const safeName = production.name.replace(/[^a-zA-Z0-9_\-]/g, "_");
+      res.setHeader("Content-Disposition", `attachment; filename="${safeName}_exportacao.zip"`);
+      res.setHeader("Content-Type", "application/zip");
+      archive.pipe(res);
+      archive.append(JSON.stringify(info, null, 2), { name: "info.json" });
+      archive.append(JSON.stringify(scriptData, null, 2), { name: "roteiro.json" });
+      archive.append(JSON.stringify(characters, null, 2), { name: "personagens.json" });
+      await archive.finalize();
+    } catch (err: any) {
+      if (!res.headersSent) res.status(500).json({ message: err?.message || "Erro ao exportar" });
     }
   });
 

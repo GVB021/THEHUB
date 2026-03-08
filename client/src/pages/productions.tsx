@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import {
   Plus, Film, Search, MoreVertical, Upload, UserPlus,
   Settings2, FileJson, Download, Loader2, Trash2, Save,
-  Clock, MessageSquare
+  Clock, MessageSquare, ClipboardPaste
 } from "lucide-react";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter,
@@ -170,10 +170,7 @@ const Productions = memo(function Productions({ studioId }: { studioId: string }
                   <DropdownMenuItem onClick={async (e) => {
                     e.stopPropagation();
                     try {
-                      const token = localStorage.getItem("vhub_token");
-                      const res = await fetch(`/api/productions/${prod.id}/export`, {
-                        headers: { Authorization: `Bearer ${token}` }
-                      });
+                      const res = await authFetch(`/api/productions/${prod.id}/export`);
                       if (!res.ok) throw new Error("Falha na exportacao");
                       const blob = await res.blob();
                       const url = window.URL.createObjectURL(blob);
@@ -252,6 +249,8 @@ function ManageProductionDialog({ productionId, studioId, open, onOpenChange }: 
   const [scriptDirty, setScriptDirty] = useState(false);
   const [editingLineIdx, setEditingLineIdx] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState<"details" | "script" | "characters">("details");
+  const [showJsonModal, setShowJsonModal] = useState(false);
+  const [jsonPasteText, setJsonPasteText] = useState("");
 
   useEffect(() => {
     if (!production) return;
@@ -345,6 +344,36 @@ function ManageProductionDialog({ productionId, studioId, open, onOpenChange }: 
     };
     reader.readAsText(file);
     e.target.value = "";
+  };
+
+  const handleJsonPaste = () => {
+    try {
+      const json = JSON.parse(jsonPasteText.trim());
+      let rawLines: any[];
+      if (Array.isArray(json)) {
+        rawLines = json;
+      } else if (json.lines && Array.isArray(json.lines)) {
+        rawLines = json.lines;
+      } else if (json.script && Array.isArray(json.script)) {
+        rawLines = json.script;
+      } else {
+        toast({ title: "Formato nao reconhecido", description: "Cole um array JSON ou um objeto com chave 'lines'.", variant: "destructive" });
+        return;
+      }
+      const normalized: ScriptLine[] = rawLines.map((line: any) => ({
+        character: String(line.character || line.personagem || line.char || line.name || ""),
+        start: toTimecodeString(line.start ?? line.tempo ?? line.timecode ?? line.tc ?? line.in ?? null),
+        text: String(line.text || line.fala || line.dialogue || line.dialog || line.line || ""),
+        notes: String(line.notes || line.notas || line.note || ""),
+      }));
+      setScriptLines(normalized);
+      setScriptDirty(true);
+      setShowJsonModal(false);
+      setJsonPasteText("");
+      toast({ title: `${normalized.length} linha${normalized.length !== 1 ? "s" : ""} importada${normalized.length !== 1 ? "s" : ""} com sucesso` });
+    } catch {
+      toast({ title: "JSON invalido", description: "Verifique a sintaxe do JSON colado e tente novamente.", variant: "destructive" });
+    }
   };
 
   const handleSaveScript = async () => {
@@ -494,13 +523,16 @@ function ManageProductionDialog({ productionId, studioId, open, onOpenChange }: 
                 </div>
                 <div className="flex items-center gap-2">
                   <Button variant="outline" size="sm" className="relative gap-1.5" data-testid="button-upload-script">
-                    <Upload className="w-3.5 h-3.5" /> Importar JSON
+                    <Upload className="w-3.5 h-3.5" /> Importar arquivo
                     <input
                       type="file"
                       accept=".json"
                       className="absolute inset-0 opacity-0 cursor-pointer"
                       onChange={handleScriptUpload}
                     />
+                  </Button>
+                  <Button variant="outline" size="sm" className="gap-1.5" onClick={() => setShowJsonModal(true)} data-testid="button-paste-json">
+                    <ClipboardPaste className="w-3.5 h-3.5" /> Colar JSON
                   </Button>
                   <Button size="sm" onClick={addScriptLine} className="gap-1.5" data-testid="button-add-script-line">
                     <Plus className="w-3.5 h-3.5" /> Adicionar Linha
@@ -604,6 +636,34 @@ function ManageProductionDialog({ productionId, studioId, open, onOpenChange }: 
               )}
             </div>
           )}
+
+          {/* JSON PASTE MODAL */}
+          <Dialog open={showJsonModal} onOpenChange={(open) => { setShowJsonModal(open); if (!open) setJsonPasteText(""); }}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="text-sm font-bold uppercase tracking-widest">Importar Roteiro via JSON</DialogTitle>
+              </DialogHeader>
+              <p className="text-xs text-muted-foreground">
+                Cole um array JSON com os campos <span className="text-primary font-semibold">personagem</span>, <span className="text-primary font-semibold">fala</span> e <span className="text-muted-foreground font-semibold">tempo</span> (opcional).
+              </p>
+              <textarea
+                value={jsonPasteText}
+                onChange={(e) => setJsonPasteText(e.target.value)}
+                placeholder={`[\n  { "personagem": "NOME", "tempo": "00:00:00", "fala": "Texto da fala" }\n]`}
+                className="w-full min-h-[200px] rounded-md border border-white/10 bg-black/40 text-xs font-mono text-foreground p-3 resize-y outline-none focus:ring-1 focus:ring-primary/50 placeholder:text-muted-foreground/50"
+                data-testid="textarea-json-paste"
+                spellCheck={false}
+              />
+              <DialogFooter className="gap-2">
+                <Button variant="ghost" onClick={() => { setShowJsonModal(false); setJsonPasteText(""); }} data-testid="button-cancel-json">
+                  Cancelar
+                </Button>
+                <Button onClick={handleJsonPaste} disabled={!jsonPasteText.trim()} className="gap-1.5" data-testid="button-confirm-json">
+                  <Upload className="w-4 h-4" /> Confirmar Importação
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           {activeTab === "characters" && (
             <div className="space-y-4">
