@@ -3,10 +3,8 @@ import { useProductions } from "@/hooks/use-productions";
 import { useSessions } from "@/hooks/use-sessions";
 import { useStudio } from "@/hooks/use-studios";
 import { useStaff } from "@/hooks/use-staff";
-import { useAuditLogs } from "@/hooks/use-audit-logs";
 import { useStudioRole } from "@/hooks/use-studio-role";
 import { DashboardCard } from "@/components/dashboard/dashboard-card";
-import { ActivityList } from "@/components/dashboard/activity-list";
 import { ProductionCard } from "@/components/dashboard/production-card";
 import { SessionCard } from "@/components/dashboard/session-card";
 import {
@@ -16,16 +14,18 @@ import { Button } from "@/components/ui/button";
 import { Film, Calendar, Users, Activity, Plus, Clock, UserPlus, ArrowRight } from "lucide-react";
 import { Link } from "wouter";
 import { pt } from "@/lib/i18n";
+import { isSessionVisibleOnDashboard } from "@/lib/session-status";
 
 const Dashboard = memo(function Dashboard({ studioId }: { studioId: string }) {
   const studio = useStudio(studioId);
   const { data: productions } = useProductions(studioId);
   const { data: sessions } = useSessions(studioId);
   const { data: staff } = useStaff(studioId);
-  const { data: auditLogs } = useAuditLogs();
   const { canCreateProductions, canCreateSessions, canManageMembers } = useStudioRole(studioId);
 
-  const upcomingSessions = sessions?.filter(s => s.status === "scheduled") || [];
+  const upcomingSessions = (sessions || []).filter(s =>
+    isSessionVisibleOnDashboard(s.scheduledAt, s.durationMinutes ?? 60)
+  );
 
   return (
     <PageSection>
@@ -70,7 +70,7 @@ const Dashboard = memo(function Dashboard({ studioId }: { studioId: string }) {
           label={pt.dashboard.upcoming}
           value={upcomingSessions.length}
           icon={<Calendar className="h-4 w-4 text-violet-400" />}
-          description="Sessoes agendadas"
+          description="Sessoes ativas"
         />
         <StatCard
           label={pt.dashboard.team}
@@ -87,55 +87,44 @@ const Dashboard = memo(function Dashboard({ studioId }: { studioId: string }) {
         />
       </div>
 
-      <div className="grid gap-5 lg:grid-cols-3">
-        <div className="lg:col-span-2 space-y-5">
-          <DashboardCard
-            title={pt.dashboard.recentProductions}
-            icon={<Film className="h-3.5 w-3.5 text-muted-foreground" />}
-            headerAction={
-              <Link href={`/studio/${studioId}/productions`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
-                Ver todas <ArrowRight className="h-3 w-3" />
-              </Link>
-            }
-          >
-            <div className="space-y-2">
-              {productions?.slice(0, 5).map(prod => (
-                <ProductionCard key={prod.id} production={prod} studioId={studioId} />
-              ))}
-              {(!productions || productions.length === 0) && (
-                <p className="vhub-caption text-center py-6">{pt.dashboard.noProductions}</p>
-              )}
-            </div>
-          </DashboardCard>
+      <div className="grid gap-5 lg:grid-cols-2">
+        <DashboardCard
+          title={pt.dashboard.recentProductions}
+          icon={<Film className="h-3.5 w-3.5 text-muted-foreground" />}
+          headerAction={
+            <Link href={`/studio/${studioId}/productions`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+              Ver todas <ArrowRight className="h-3 w-3" />
+            </Link>
+          }
+        >
+          <div className="space-y-2">
+            {productions?.slice(0, 6).map(prod => (
+              <ProductionCard key={prod.id} production={prod} studioId={studioId} />
+            ))}
+            {(!productions || productions.length === 0) && (
+              <p className="vhub-caption text-center py-6">{pt.dashboard.noProductions}</p>
+            )}
+          </div>
+        </DashboardCard>
 
-          <DashboardCard
-            title={pt.dashboard.upcomingSessions}
-            icon={<Calendar className="h-3.5 w-3.5 text-muted-foreground" />}
-            headerAction={
-              <Link href={`/studio/${studioId}/sessions`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
-                Ver todas <ArrowRight className="h-3 w-3" />
-              </Link>
-            }
-          >
-            <div className="space-y-2">
-              {upcomingSessions.slice(0, 4).map(session => (
-                <SessionCard key={session.id} session={session} studioId={studioId} />
-              ))}
-              {upcomingSessions.length === 0 && (
-                <p className="vhub-caption text-center py-6">{pt.dashboard.noSessions}</p>
-              )}
-            </div>
-          </DashboardCard>
-        </div>
-
-        <div>
-          <DashboardCard
-            title={pt.dashboard.recentActivity}
-            icon={<Activity className="h-3.5 w-3.5 text-muted-foreground" />}
-          >
-            <ActivityList activities={auditLogs || []} />
-          </DashboardCard>
-        </div>
+        <DashboardCard
+          title={pt.dashboard.upcomingSessions}
+          icon={<Calendar className="h-3.5 w-3.5 text-muted-foreground" />}
+          headerAction={
+            <Link href={`/studio/${studioId}/sessions`} className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
+              Ver todas <ArrowRight className="h-3 w-3" />
+            </Link>
+          }
+        >
+          <div className="space-y-2">
+            {upcomingSessions.slice(0, 6).map(session => (
+              <SessionCard key={session.id} session={session} studioId={studioId} />
+            ))}
+            {upcomingSessions.length === 0 && (
+              <p className="vhub-caption text-center py-6">{pt.dashboard.noSessions}</p>
+            )}
+          </div>
+        </DashboardCard>
       </div>
     </PageSection>
   );

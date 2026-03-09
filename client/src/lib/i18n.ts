@@ -49,6 +49,7 @@ export const pt = {
     platform: "Plataforma",
     members: "Membros",
     takes: "Takes de Audio",
+    profile: "Perfil",
   },
   studio: {
     yourStudios: "Seus Estudios",

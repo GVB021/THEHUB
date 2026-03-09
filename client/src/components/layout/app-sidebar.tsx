@@ -1,7 +1,7 @@
 import { memo, useMemo } from "react";
 import {
   Building2, Calendar, Film, LayoutDashboard,
-  Settings, Users, LogOut, Bell, ShieldCheck, Music
+  Settings, Users, LogOut, Bell, ShieldCheck, Music, UserCircle
 } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import {
@@ -33,12 +33,15 @@ export const AppSidebar = memo(function AppSidebar({ studioId }: AppSidebarProps
   });
 
   const isStudioAdmin = user?.role === "platform_owner" || hasMinRole("studio_admin");
+  const isRestrictedRole = !hasMinRole("diretor");
 
   const navItems = useMemo(() => {
     const items = [
       { title: pt.nav.dashboard, url: `/studio/${studioId}/dashboard`, icon: LayoutDashboard },
     ];
-    items.push({ title: pt.nav.productions, url: `/studio/${studioId}/productions`, icon: Film });
+    if (!isRestrictedRole) {
+      items.push({ title: pt.nav.productions, url: `/studio/${studioId}/productions`, icon: Film });
+    }
     items.push({ title: pt.nav.sessions, url: `/studio/${studioId}/sessions`, icon: Calendar });
     if (isStudioAdmin) {
       items.push({ title: pt.nav.takes, url: `/studio/${studioId}/takes`, icon: Music });
@@ -50,7 +53,7 @@ export const AppSidebar = memo(function AppSidebar({ studioId }: AppSidebarProps
       items.push({ title: pt.nav.staff, url: `/studio/${studioId}/staff`, icon: Users });
     }
     return items;
-  }, [studioId, canManageMembers, canViewStaff, isStudioAdmin]);
+  }, [studioId, canManageMembers, canViewStaff, isStudioAdmin, isRestrictedRole]);
 
   const activeItemClass = "bg-gradient-to-r from-primary/20 to-accent/10 text-primary font-medium border-l-2 border-l-primary";
   const inactiveItemClass = "text-sidebar-foreground/70 border-l-2 border-l-transparent";
@@ -72,7 +75,7 @@ export const AppSidebar = memo(function AppSidebar({ studioId }: AppSidebarProps
           <SidebarGroupContent>
             <SidebarMenu>
               {navItems.map((item) => {
-                const isActive = location === item.url;
+                const isActive = location === item.url || location.startsWith(item.url + "?");
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
@@ -167,6 +170,20 @@ export const AppSidebar = memo(function AppSidebar({ studioId }: AppSidebarProps
 
       <SidebarFooter className="border-t border-white/[0.08] p-2">
         <SidebarMenu className="gap-0.5">
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              asChild
+              isActive={location === "/profile"}
+              className={`h-8 rounded-md transition-all duration-150 ${
+                location === "/profile" ? activeItemClass : "text-sidebar-foreground/60 border-l-2 border-l-transparent"
+              }`}
+            >
+              <Link href="/profile" className="flex items-center gap-2.5 px-2" data-testid="link-profile">
+                <UserCircle className="h-3.5 w-3.5 shrink-0" />
+                <span className="text-sm">{pt.nav.profile}</span>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className="h-8 rounded-md text-sidebar-foreground/60 border-l-2 border-l-transparent transition-all duration-150">
               <Link href="/studios" className="flex items-center gap-2.5 px-2" data-testid="link-switch-studio">

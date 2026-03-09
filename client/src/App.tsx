@@ -1,5 +1,5 @@
 import { Switch, Route, Redirect, Router as WouterRouter, useLocation } from "wouter";
-import { memoryHook } from "@/lib/memory-router";
+import { memoryHook, memorySearchHook } from "@/lib/memory-router";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
@@ -22,6 +22,7 @@ const Notifications = lazy(() => import("@/pages/notifications"));
 const Members = lazy(() => import("@/pages/members"));
 const StudioAdmin = lazy(() => import("@/pages/studio-admin"));
 const Takes = lazy(() => import("@/pages/takes"));
+const Profile = lazy(() => import("@/pages/profile"));
 
 import { StudioLayout } from "@/components/layout/studio-layout";
 
@@ -96,6 +97,10 @@ function Router() {
           {() => <ProtectedRoute component={Admin} />}
         </Route>
 
+        <Route path="/profile">
+          {() => <ProtectedRoute component={Profile} />}
+        </Route>
+
         <Route path="/studio/:studioId/dashboard">
           {params => <ProtectedRoute component={Dashboard} requireStudio params={params} />}
         </Route>
@@ -136,7 +141,7 @@ export default function App() {
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <ErrorBoundary>
-          <WouterRouter hook={memoryHook}>
+          <WouterRouter hook={memoryHook} searchHook={memorySearchHook}>
             <Toaster />
             <Router />
           </WouterRouter>

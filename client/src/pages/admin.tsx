@@ -862,10 +862,20 @@ function StudiosSection() {
   );
 }
 
+const PROD_STATUSES = [
+  { value: "planned", label: "Planejada" },
+  { value: "in_progress", label: "Em Andamento" },
+  { value: "completed", label: "Concluida" },
+];
+
 function ProductionsSection() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
+  const [editProd, setEditProd] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ name: "", description: "", status: "", videoUrl: "" });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ studioId: "", name: "", description: "", status: "planned" });
   const [search, setSearch] = useState("");
 
   const { data: prods = [], isLoading } = useQuery({
@@ -874,17 +884,39 @@ function ProductionsSection() {
     refetchInterval: 5000,
   });
 
+  const { data: studiosList = [] } = useQuery({
+    queryKey: ["/api/admin/studios"],
+    queryFn: () => authFetch("/api/admin/studios") as Promise<any[]>,
+  });
+
   const deleteMut = useMutation({
     mutationFn: (id: string) => authFetch(`/api/admin/productions/${id}`, { method: "DELETE" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/productions"] }); qc.invalidateQueries({ queryKey: ["/api/admin/stats"] }); toast({ title: "Producao excluida" }); },
     onError: (e: any) => toast({ title: e.message || "Falha", variant: "destructive" }),
   });
 
+  const editMut = useMutation({
+    mutationFn: ({ id, data }: any) => authFetch(`/api/admin/productions/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/productions"] }); setEditProd(null); toast({ title: "Producao atualizada" }); },
+    onError: (e: any) => toast({ title: e.message || "Falha", variant: "destructive" }),
+  });
+
+  const createMut = useMutation({
+    mutationFn: (data: any) => authFetch("/api/admin/productions", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/productions"] }); qc.invalidateQueries({ queryKey: ["/api/admin/stats"] }); setCreateOpen(false); setCreateForm({ studioId: "", name: "", description: "", status: "planned" }); toast({ title: "Producao criada" }); },
+    onError: (e: any) => toast({ title: e.message || "Falha ao criar", variant: "destructive" }),
+  });
+
   const filtered = prods.filter(p => p.name?.toLowerCase().includes(search.toLowerCase()));
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Gerenciamento de Producoes</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Gerenciamento de Producoes</h2>
+        <Button onClick={() => setCreateOpen(true)} data-testid="button-create-production">
+          <Plus className="h-4 w-4 mr-1.5" /> Nova Producao
+        </Button>
+      </div>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar producoes..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
@@ -915,11 +947,14 @@ function ProductionsSection() {
                       {prod.createdAt ? new Date(prod.createdAt).toLocaleDateString() : "—"}
                     </td>
                     <td className="p-3 text-right">
-                      <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10" 
-                        onClick={() => setDeleteConfirm(prod)} 
-                        data-testid={`button-delete-prod-${prod.id}`}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        <Button size="icon" variant="ghost" onClick={() => { setEditProd(prod); setEditForm({ name: prod.name, description: prod.description || "", status: prod.status || "planned", videoUrl: prod.videoUrl || "" }); }} data-testid={`button-edit-prod-${prod.id}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                        <Button size="icon" variant="ghost" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteConfirm(prod)} data-testid={`button-delete-prod-${prod.id}`}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -929,6 +964,57 @@ function ProductionsSection() {
           )}
         </div>
       </div>
+
+      <Dialog open={!!editProd} onOpenChange={() => setEditProd(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Producao</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5"><Label>Nome</Label><Input value={editForm.name} onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))} data-testid="input-edit-prod-name" /></div>
+            <div className="space-y-1.5"><Label>Descricao</Label><Input value={editForm.description} onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))} /></div>
+            <div className="space-y-1.5"><Label>URL do Video</Label><Input value={editForm.videoUrl} onChange={e => setEditForm(f => ({ ...f, videoUrl: e.target.value }))} /></div>
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PROD_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditProd(null)}>Cancelar</Button>
+            <Button onClick={() => editMut.mutate({ id: editProd.id, data: editForm })} disabled={editMut.isPending}>{editMut.isPending ? "Salvando..." : "Salvar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createOpen} onOpenChange={v => { if (!v) setCreateOpen(false); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nova Producao</DialogTitle><DialogDescription>Crie uma producao em um estudio especifico.</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Estudio *</Label>
+              <Select value={createForm.studioId} onValueChange={v => setCreateForm(f => ({ ...f, studioId: v }))}>
+                <SelectTrigger data-testid="select-create-prod-studio"><SelectValue placeholder="Selecione o estudio" /></SelectTrigger>
+                <SelectContent>{studiosList.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>Nome *</Label><Input value={createForm.name} onChange={e => setCreateForm(f => ({ ...f, name: e.target.value }))} placeholder="Nome da producao" data-testid="input-create-prod-name" /></div>
+            <div className="space-y-1.5"><Label>Descricao</Label><Input value={createForm.description} onChange={e => setCreateForm(f => ({ ...f, description: e.target.value }))} placeholder="Descricao (opcional)" /></div>
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={createForm.status} onValueChange={v => setCreateForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{PROD_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button onClick={() => createMut.mutate(createForm)} disabled={!createForm.studioId || !createForm.name.trim() || createMut.isPending} data-testid="button-confirm-create-production">{createMut.isPending ? "Criando..." : "Criar Producao"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}
@@ -940,10 +1026,21 @@ function ProductionsSection() {
   );
 }
 
+const SESS_STATUSES = [
+  { value: "scheduled", label: "Agendada" },
+  { value: "in_progress", label: "Em Progresso" },
+  { value: "completed", label: "Finalizada" },
+  { value: "cancelled", label: "Cancelada" },
+];
+
 function SessionsSection() {
   const qc = useQueryClient();
   const { toast } = useToast();
   const [deleteConfirm, setDeleteConfirm] = useState<any | null>(null);
+  const [editSess, setEditSess] = useState<any | null>(null);
+  const [editForm, setEditForm] = useState({ title: "", scheduledAt: "", durationMinutes: "60", status: "" });
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createForm, setCreateForm] = useState({ studioId: "", productionId: "", title: "", scheduledAt: "", durationMinutes: "60" });
   const [search, setSearch] = useState("");
 
   const { data: sessData = [], isLoading } = useQuery({
@@ -952,20 +1049,41 @@ function SessionsSection() {
     refetchInterval: 5000,
   });
 
+  const { data: studiosList = [] } = useQuery({
+    queryKey: ["/api/admin/studios"],
+    queryFn: () => authFetch("/api/admin/studios") as Promise<any[]>,
+  });
+
+  const { data: prodsList = [] } = useQuery({
+    queryKey: ["/api/admin/productions"],
+    queryFn: () => authFetch("/api/admin/productions") as Promise<any[]>,
+  });
+
   const deleteMut = useMutation({
     mutationFn: (id: string) => authFetch(`/api/admin/sessions/${id}`, { method: "DELETE" }),
     onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/sessions"] }); qc.invalidateQueries({ queryKey: ["/api/admin/stats"] }); toast({ title: "Sessao excluida" }); },
     onError: (e: any) => toast({ title: e.message || "Falha", variant: "destructive" }),
   });
 
-  const cancelMut = useMutation({
-    mutationFn: (id: string) => authFetch(`/api/admin/sessions/${id}`, { method: "PATCH", body: JSON.stringify({ status: "cancelled" }) }),
-    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/sessions"] }); toast({ title: "Sessao cancelada" }); },
+  const editMut = useMutation({
+    mutationFn: ({ id, data }: any) => authFetch(`/api/admin/sessions/${id}`, { method: "PATCH", body: JSON.stringify(data) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/sessions"] }); setEditSess(null); toast({ title: "Sessao atualizada" }); },
+    onError: (e: any) => toast({ title: e.message || "Falha", variant: "destructive" }),
+  });
+
+  const createMut = useMutation({
+    mutationFn: (data: any) => authFetch("/api/admin/sessions", { method: "POST", body: JSON.stringify(data) }),
+    onSuccess: () => { qc.invalidateQueries({ queryKey: ["/api/admin/sessions"] }); qc.invalidateQueries({ queryKey: ["/api/admin/stats"] }); setCreateOpen(false); setCreateForm({ studioId: "", productionId: "", title: "", scheduledAt: "", durationMinutes: "60" }); toast({ title: "Sessao criada" }); },
+    onError: (e: any) => toast({ title: e.message || "Falha ao criar", variant: "destructive" }),
   });
 
   const filtered = sessData.filter(s => s.title?.toLowerCase().includes(search.toLowerCase()));
 
-  function statusColor(status: string) {
+  const filteredProds = createForm.studioId
+    ? prodsList.filter((p: any) => p.studioId === createForm.studioId)
+    : prodsList;
+
+  function statusColor(status: string): "destructive" | "default" | "secondary" | "outline" {
     if (status === "scheduled") return "default";
     if (status === "completed") return "secondary";
     if (status === "cancelled") return "destructive";
@@ -974,7 +1092,12 @@ function SessionsSection() {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-xl font-semibold">Gerenciamento de Sessoes</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-xl font-semibold">Gerenciamento de Sessoes</h2>
+        <Button onClick={() => setCreateOpen(true)} data-testid="button-create-session">
+          <Plus className="h-4 w-4 mr-1.5" /> Nova Sessao
+        </Button>
+      </div>
       <div className="relative">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
         <Input placeholder="Buscar sessoes..." className="pl-9" value={search} onChange={e => setSearch(e.target.value)} />
@@ -1006,11 +1129,15 @@ function SessionsSection() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        {sess.status !== "cancelled" && (
-                          <Button size="icon" variant="ghost" title="Cancelar Sessao" onClick={() => cancelMut.mutate(sess.id)} data-testid={`button-cancel-session-${sess.id}`}>
-                            <XCircle className="h-4 w-4 text-amber-500" />
-                          </Button>
-                        )}
+                        <Button size="icon" variant="ghost" title="Editar Sessao"
+                          onClick={() => {
+                            setEditSess(sess);
+                            const dt = sess.scheduledAt ? new Date(sess.scheduledAt).toISOString().slice(0, 16) : "";
+                            setEditForm({ title: sess.title, scheduledAt: dt, durationMinutes: String(sess.durationMinutes || 60), status: sess.status || "scheduled" });
+                          }}
+                          data-testid={`button-edit-session-${sess.id}`}>
+                          <Pencil className="h-4 w-4" />
+                        </Button>
                         <Button size="icon" variant="ghost" title="Excluir Sessao" className="text-destructive hover:bg-destructive/10" onClick={() => setDeleteConfirm(sess)} data-testid={`button-delete-session-${sess.id}`}>
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -1024,6 +1151,58 @@ function SessionsSection() {
           )}
         </div>
       </div>
+
+      <Dialog open={!!editSess} onOpenChange={() => setEditSess(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Editar Sessao</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5"><Label>Titulo</Label><Input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))} data-testid="input-edit-sess-title" /></div>
+            <div className="space-y-1.5"><Label>Data e Hora</Label><Input type="datetime-local" value={editForm.scheduledAt} onChange={e => setEditForm(f => ({ ...f, scheduledAt: e.target.value }))} /></div>
+            <div className="space-y-1.5"><Label>Duracao (min)</Label><Input type="number" value={editForm.durationMinutes} onChange={e => setEditForm(f => ({ ...f, durationMinutes: e.target.value }))} /></div>
+            <div className="space-y-1.5">
+              <Label>Status</Label>
+              <Select value={editForm.status} onValueChange={v => setEditForm(f => ({ ...f, status: v }))}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>{SESS_STATUSES.map(s => <SelectItem key={s.value} value={s.value}>{s.label}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditSess(null)}>Cancelar</Button>
+            <Button onClick={() => editMut.mutate({ id: editSess.id, data: { title: editForm.title, scheduledAt: editForm.scheduledAt, durationMinutes: parseInt(editForm.durationMinutes) || 60, status: editForm.status } })} disabled={editMut.isPending}>{editMut.isPending ? "Salvando..." : "Salvar"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={createOpen} onOpenChange={v => { if (!v) setCreateOpen(false); }}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>Nova Sessao</DialogTitle><DialogDescription>Agende uma sessao em qualquer estudio.</DialogDescription></DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Estudio *</Label>
+              <Select value={createForm.studioId} onValueChange={v => setCreateForm(f => ({ ...f, studioId: v, productionId: "" }))}>
+                <SelectTrigger data-testid="select-create-sess-studio"><SelectValue placeholder="Selecione o estudio" /></SelectTrigger>
+                <SelectContent>{studiosList.map((s: any) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Producao *</Label>
+              <Select value={createForm.productionId} onValueChange={v => setCreateForm(f => ({ ...f, productionId: v }))}>
+                <SelectTrigger data-testid="select-create-sess-prod"><SelectValue placeholder="Selecione a producao" /></SelectTrigger>
+                <SelectContent>{filteredProds.map((p: any) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5"><Label>Titulo *</Label><Input value={createForm.title} onChange={e => setCreateForm(f => ({ ...f, title: e.target.value }))} placeholder="Titulo da sessao" data-testid="input-create-sess-title" /></div>
+            <div className="space-y-1.5"><Label>Data e Hora *</Label><Input type="datetime-local" value={createForm.scheduledAt} onChange={e => setCreateForm(f => ({ ...f, scheduledAt: e.target.value }))} /></div>
+            <div className="space-y-1.5"><Label>Duracao (min)</Label><Input type="number" value={createForm.durationMinutes} onChange={e => setCreateForm(f => ({ ...f, durationMinutes: e.target.value }))} /></div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>Cancelar</Button>
+            <Button onClick={() => createMut.mutate({ ...createForm, durationMinutes: parseInt(createForm.durationMinutes) || 60 })} disabled={!createForm.studioId || !createForm.productionId || !createForm.title.trim() || !createForm.scheduledAt || createMut.isPending} data-testid="button-confirm-create-session">{createMut.isPending ? "Criando..." : "Criar Sessao"}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       <ConfirmDialog
         open={!!deleteConfirm}
         onClose={() => setDeleteConfirm(null)}

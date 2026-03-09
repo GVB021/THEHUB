@@ -1,14 +1,20 @@
 import { Calendar } from "lucide-react";
 import { format } from "date-fns";
 import { Link } from "wouter";
+import { computeSessionStatus } from "@/lib/session-status";
+import { StatusBadge } from "@/components/ui/design-system";
 
 interface Session {
   id: string;
   title: string;
   scheduledAt: string;
+  durationMinutes?: number;
+  status?: string;
 }
 
 export function SessionCard({ session, studioId }: { session: Session; studioId: string }) {
+  const computedStatus = computeSessionStatus(session.scheduledAt, session.durationMinutes ?? 60);
+
   return (
     <Link
       href={`/studio/${studioId}/sessions/${session.id}/room`}
@@ -18,12 +24,13 @@ export function SessionCard({ session, studioId }: { session: Session; studioId:
       <div className="h-7 w-7 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
         <Calendar className="h-3.5 w-3.5 text-primary" />
       </div>
-      <div className="min-w-0">
+      <div className="min-w-0 flex-1">
         <p className="text-sm font-medium text-foreground truncate">{session.title}</p>
         <p className="text-[11px] text-muted-foreground mt-0.5">
           {format(new Date(session.scheduledAt), "dd/MM, HH:mm")}
         </p>
       </div>
+      <StatusBadge status={computedStatus} className="ml-2 shrink-0" />
     </Link>
   );
 }

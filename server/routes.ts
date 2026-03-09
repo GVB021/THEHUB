@@ -11,7 +11,7 @@ import { z } from "zod";
 import { db } from "./db";
 import { eq, and } from "drizzle-orm";
 import {
-  productions, characters, takes, users, studios, sessions,
+  productions, characters, takes, users, studios, sessions, studioMemberships, userStudioRoles,
   type Production, type Session,
   insertProductionSchema, insertCharacterSchema, insertTakeSchema, insertSessionSchema,
 } from "@shared/schema";
@@ -87,6 +87,22 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     const notifs = await storage.getNotifications(userId);
     await Promise.all(notifs.map(n => storage.markNotificationRead(n.id)));
     res.status(200).json({ ok: true });
+  });
+
+  // PROFILE
+  app.patch("/api/auth/profile", requireAuth, async (req, res) => {
+    try {
+      const userId = (req as any).user!.id;
+      const allowed = ["firstName", "lastName", "displayName", "artistName", "phone", "city", "state", "bio", "experience", "specialty", "mainLanguage", "portfolioUrl"];
+      const updates: Record<string, any> = {};
+      for (const field of allowed) {
+        if (req.body[field] !== undefined) updates[field] = req.body[field];
+      }
+      const updated = await storage.updateUser(userId, updates);
+      res.status(200).json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Falha ao atualizar perfil" });
+    }
   });
 
   // STUDIOS
@@ -240,6 +256,21 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  // MEMBERS - REMOVE
+  app.delete("/api/studios/:studioId/members/:membershipId", requireAuth, requireStudioRole("studio_admin"), async (req, res) => {
+    try {
+      const membership = await storage.getMembership(req.params.membershipId);
+      if (!membership || membership.studioId !== req.params.studioId) {
+        return res.status(404).json({ message: "Membro nao encontrado" });
+      }
+      await db.delete(userStudioRoles).where(eq(userStudioRoles.membershipId, req.params.membershipId));
+      await db.delete(studioMemberships).where(eq(studioMemberships.id, req.params.membershipId));
+      res.status(200).json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Erro ao remover membro" });
+    }
+  });
+
   app.post("/api/studios/:studioId/join", requireAuth, async (req, res) => {
     const user = (req as any).user!;
     const existing = await storage.getMembershipsByUser(user.id);
@@ -319,6 +350,18 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(200).json(updated);
     } catch (err) {
       res.status(400).json({ message: "Dados invalidos" });
+    }
+  });
+
+  app.delete("/api/studios/:studioId/productions/:id", requireAuth, requireStudioRole("studio_admin"), async (req, res) => {
+    try {
+      const prod = await storage.getProduction(req.params.id);
+      if (!prod) return res.status(404).json({ message: "Producao nao encontrada" });
+      if (prod.studioId !== req.params.studioId) return res.status(403).json({ message: "Acesso negado" });
+      await storage.deleteProduction(req.params.id);
+      res.status(200).json({ ok: true });
+    } catch (err: any) {
+      res.status(500).json({ message: err.message || "Falha ao excluir producao" });
     }
   });
 
@@ -930,6 +973,28 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
     }
   });
 
+  app.patch("/api/admin/productions/:id", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const [updated] = await db.update(productions).set(req.body).where(eq(productions.id, req.params.id)).returning();
+      await logAdminAction(req, "UPDATE_PRODUCTION", `Atualizou producao ${req.params.id}`);
+      res.status(200).json(updated);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Dados invalidos" });
+    }
+  });
+
+  app.post("/api/admin/productions", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { studioId, name, description, videoUrl, status } = req.body;
+      if (!studioId || !name) return res.status(400).json({ message: "studioId e name sao obrigatorios" });
+      const prod = await storage.createProduction({ studioId, name, description, videoUrl, status: status || "planned" });
+      await logAdminAction(req, "CREATE_PRODUCTION", `Criou producao ${prod.name}`);
+      res.status(201).json(prod);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Dados invalidos" });
+    }
+  });
+
   // ADMIN SESSIONS
   app.get("/api/admin/sessions", requireAuth, requireAdmin, async (req, res) => {
     const allSessions = await storage.getAllSessions();
@@ -953,6 +1018,25 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
       res.status(200).json({ ok: true });
     } catch (err: any) {
       res.status(500).json({ message: err.message || "Falha ao excluir sessao" });
+    }
+  });
+
+  app.post("/api/admin/sessions", requireAuth, requireAdmin, async (req, res) => {
+    try {
+      const { studioId, productionId, title, scheduledAt, durationMinutes } = req.body;
+      if (!studioId || !productionId || !title || !scheduledAt) {
+        return res.status(400).json({ message: "Campos obrigatorios em falta" });
+      }
+      const session = await storage.createSession({
+        studioId, productionId, title,
+        scheduledAt: new Date(scheduledAt),
+        status: "scheduled",
+        durationMinutes: durationMinutes ? parseInt(durationMinutes) : 60,
+      });
+      await logAdminAction(req, "CREATE_SESSION", `Criou sessao ${title}`);
+      res.status(201).json(session);
+    } catch (err: any) {
+      res.status(400).json({ message: err.message || "Dados invalidos" });
     }
   });
 
