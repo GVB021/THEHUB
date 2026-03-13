@@ -1682,7 +1682,7 @@ export default function RecordingRoom() {
           <AlertCircle className="w-12 h-12 text-destructive" />
           <p className="text-sm font-medium text-foreground">Erro ao carregar sessao</p>
           <p className="text-xs text-muted-foreground">Verifique se voce tem acesso a este estudio e sessao.</p>
-          <Link href={`/studio/${studioId}/sessions`}>
+          <Link href={`/hub-dub/studio/${studioId}/sessions`}>
             <button className="mt-2 vhub-btn-sm vhub-btn-primary" data-testid="button-back-sessions">
               Voltar para Sessoes
             </button>
@@ -1875,7 +1875,7 @@ export default function RecordingRoom() {
 
       <header className="h-[52px] shrink-0 flex items-center justify-between px-5" style={{ background: "rgba(255,255,255,0.04)", backdropFilter: "blur(16px)", WebkitBackdropFilter: "blur(16px)", borderBottom: "1px solid rgba(255,255,255,0.08)" }}>
         <div className="flex items-center gap-4">
-          <Link href={`/studio/${studioId}/sessions`}>
+          <Link href={`/hub-dub/studio/${studioId}/sessions`}>
             <button className="flex items-center gap-2 text-sm transition-colors" style={{ color: "rgba(255,255,255,0.45)" }} data-testid="button-exit-room">
               <ArrowLeft className="w-4 h-4" />
               Sair

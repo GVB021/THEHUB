@@ -78,14 +78,14 @@ const Dashboard = memo(function Dashboard({ studioId }: { studioId: string }) {
             <div className="flex gap-2">
               {canCreateProductions && (
                 <Button size="sm" className="gap-1.5 vhub-btn-sm vhub-btn-primary shadow-lg shadow-primary/20" asChild>
-                  <Link href={`/studio/${studioId}/productions`}>
+                  <Link href={`/hub-dub/studio/${studioId}/productions`}>
                     <Plus className="h-3.5 w-3.5" /> {pt.dashboard.production}
                   </Link>
                 </Button>
               )}
               {canCreateSessions && (
                 <Button size="sm" variant="outline" className="gap-1.5 border-white/10 hover:bg-white/5" asChild>
-                  <Link href={`/studio/${studioId}/sessions`}>
+                  <Link href={`/hub-dub/studio/${studioId}/sessions`}>
                     <Clock className="h-3.5 w-3.5" /> {pt.dashboard.session}
                   </Link>
                 </Button>
@@ -195,7 +195,7 @@ const Dashboard = memo(function Dashboard({ studioId }: { studioId: string }) {
                   <PlayCircle className="w-5 h-5 text-primary" />
                   Sessões
                 </h3>
-                <Link href={`/studio/${studioId}/sessions`} className="text-xs text-primary hover:underline">
+                <Link href={`/hub-dub/studio/${studioId}/sessions`} className="text-xs text-primary hover:underline">
                   Ver agenda completa
                 </Link>
               </div>
@@ -272,7 +272,7 @@ const Dashboard = memo(function Dashboard({ studioId }: { studioId: string }) {
                   recentSessions.map(session => (
                     <Link 
                       key={session.id} 
-                      href={`/studio/${studioId}/sessions/${session.id}`}
+                      href={`/hub-dub/studio/${studioId}/sessions/${session.id}/room`}
                       className={cn(
                         "flex items-center gap-4 p-4 rounded-xl border border-white/5 bg-white/[0.02] group",
                         animationsEnabled && "transition-all hover:bg-white/[0.04] hover:border-primary/20 hover:translate-x-1"

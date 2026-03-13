@@ -92,7 +92,7 @@ const Sessions = memo(function Sessions({ studioId }: { studioId: string }) {
         action={
           <div className="flex items-center gap-2">
             {filterProductionId && (
-              <Button size="sm" variant="outline" onClick={() => navigate(`/studio/${studioId}/sessions`)} className="gap-1.5 text-xs">
+              <Button size="sm" variant="outline" onClick={() => navigate(`/hub-dub/studio/${studioId}/sessions`)} className="gap-1.5 text-xs">
                 Ver todas
               </Button>
             )}
@@ -177,12 +177,12 @@ const Sessions = memo(function Sessions({ studioId }: { studioId: string }) {
               role="link"
               tabIndex={0}
               onClick={() => {
-                if (canEnter) navigate(`/studio/${studioId}/sessions/${session.id}/room`);
+                if (canEnter) navigate(`/hub-dub/studio/${studioId}/sessions/${session.id}/room`);
               }}
               onKeyDown={(e) => {
                 if ((e.key === "Enter" || e.key === " ") && canEnter) {
                   e.preventDefault();
-                  navigate(`/studio/${studioId}/sessions/${session.id}/room`);
+                  navigate(`/hub-dub/studio/${studioId}/sessions/${session.id}/room`);
                 }
               }}
             >
@@ -228,7 +228,7 @@ const Sessions = memo(function Sessions({ studioId }: { studioId: string }) {
                       onClick={(e) => e.stopPropagation()}
                       asChild
                     >
-                      <Link href={`/studio/${studioId}/sessions/${session.id}/room`}>
+                      <Link href={`/hub-dub/studio/${studioId}/sessions/${session.id}/room`}>
                         <Video className="w-3.5 h-3.5" />
                         {pt.sessions.join}
                       </Link>

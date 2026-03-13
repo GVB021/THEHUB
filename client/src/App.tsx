@@ -11,6 +11,7 @@ import { lazy, Suspense, useEffect, type ComponentType } from "react";
 import { ErrorBoundary } from "@/components/ui/error-boundary";
 import { initThemeMode } from "@/lib/theme-mode";
 import { ThemeProvider } from "next-themes";
+import { BackButton } from "@/components/nav/BackButton";
 
 const lazyWithRetry = <T extends ComponentType<any>>(importer: () => Promise<{ default: T }>) =>
   lazy(async () => {
@@ -272,6 +273,7 @@ export default function App() {
           <ErrorBoundary>
             <WouterRouter hook={memoryHook} searchHook={memorySearchHook}>
               <Toaster />
+              <BackButton />
               <Router />
             </WouterRouter>
           </ErrorBoundary>
