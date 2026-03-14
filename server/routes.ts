@@ -691,30 +691,11 @@ export async function registerRoutes(httpServer: Server, app: Express): Promise<
         try {
           const status = await checkSupabaseConnection(false);
           if (!status.ok) throw new Error(status.reason || "Supabase indisponivel");
-          const cleanLabel = (v: string) =>
-            v
-              .normalize("NFKD")
-              .replace(/[\u0300-\u036f]/g, "")
-              .replace(/[^a-zA-Z0-9]/g, "");
-          const cleanTimecode = (v: string) =>
-            v
-              .replace(/\s+/g, "")
-              .replace(/[:.,;]/g, "-")
-              .replace(/[^0-9-]/g, "")
-              .replace(/-+/g, "-")
-              .replace(/^-+|-+$/g, "");
-
-          const characterLabel = cleanLabel(String(req.body.characterName || "")) || "PERSONAGEM";
-          const voiceActorLabel = cleanLabel(String(req.body.voiceActorName || "")) || "DUBLADOR";
-          const timecodeLabel = cleanTimecode(String(req.body.timecode || "")) || "00-00-00";
-          const filename = `[${characterLabel}][${voiceActorLabel}][${timecodeLabel}].WAV`;
-
           const objectPath = [
             String(takesPath || "takes"),
             `studio_${String((sessionCheck as any).studioId || "")}`,
             `session_${sessionId}`,
-            `take_${take.id}`,
-            filename,
+            `take_${take.id}.wav`,
           ].join("/");
           const publicUrl = await uploadToSupabaseStorage({
             bucket: supabaseBucket,

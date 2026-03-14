@@ -1658,8 +1658,7 @@ export default function RecordingRoom() {
       const mm = String(Math.floor((tcSeconds % 3600) / 60)).padStart(2, "0");
       const ss = String(tcSeconds % 60).padStart(2, "0");
       const cleanName = (s: string) => s.replace(/[^a-zA-Z0-9]/g, "");
-      const timecode = `${hh}:${mm}:${ss}`;
-      const fileName = `[${cleanName(activeProfile.characterName)}][${cleanName(activeProfile.voiceActorName)}][${hh}-${mm}-${ss}].WAV`;
+      const fileName = `${cleanName(activeProfile.characterName)}_${cleanName(activeProfile.voiceActorName)}_${hh}${mm}${ss}.WAV`;
 
       console.log("[SaveTake] Saving with profile:", {
         character: activeProfile.characterName,
@@ -1675,7 +1674,6 @@ export default function RecordingRoom() {
       formData.append("voiceActorId", activeProfile.voiceActorId);
       formData.append("voiceActorName", activeProfile.voiceActorName);
       formData.append("characterName", activeProfile.characterName);
-      formData.append("timecode", timecode);
       formData.append("lineIndex", String(currentLine));
       formData.append("durationSeconds", String(durationSeconds));
       formData.append("qualityScore", String(qualityMetrics?.score || 0));
